@@ -1,30 +1,935 @@
-<section id="authScreen">
-  <div class="auth-card">
-    <h1>Welcome to GlobalQuery</h1>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API GlobalQuery 3.0</title>
+  <meta name="theme-color" content="#151f2b">
+  <meta name="apple-mobile-web-app-title" content="API GlobalQuery">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
 
-    <p id="authMessage">
-      Finish setting up your account.
-    </p>
+  <!-- ======================================================
+       AUTH
+       ====================================================== -->
 
-    <form id="setPasswordForm">
-      <label for="newPassword">
-        Password
-      </label>
+  <section
+    id="authScreen"
+    class="auth-screen"
+    hidden
+  >
+    <div class="auth-card">
 
-      <input
-        id="newPassword"
-        type="password"
-        minlength="8"
-        required
+      <div class="auth-brand">
+        <img
+          src="./icons/icon-192.png"
+          alt="GlobalQuery"
+          class="auth-logo"
+        >
+
+        <div>
+          <h1>API GlobalQuery</h1>
+
+          <p class="muted">
+            Case intelligence, agency trends,
+            and churn monitoring
+          </p>
+        </div>
+      </div>
+
+
+      <!-- Normal login -->
+
+      <div id="loginPanel">
+        <h2>Sign In</h2>
+
+        <p
+          id="loginMessage"
+          class="muted small"
+        >
+          Sign in with your GlobalQuery account.
+        </p>
+
+        <form id="loginForm">
+
+          <div class="field">
+            <label for="loginEmail">
+              Email
+            </label>
+
+            <input
+              id="loginEmail"
+              class="input"
+              type="email"
+              autocomplete="email"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="loginPassword">
+              Password
+            </label>
+
+            <input
+              id="loginPassword"
+              class="input"
+              type="password"
+              autocomplete="current-password"
+              required
+            >
+          </div>
+
+          <button
+            type="submit"
+            class="btn primary auth-submit"
+          >
+            Sign In
+          </button>
+
+        </form>
+      </div>
+
+
+      <!-- Invitation / password setup -->
+
+      <div
+        id="passwordSetupPanel"
+        hidden
       >
+        <h2>Set Your Password</h2>
 
-      <button type="submit">
-        Set Password
-      </button>
-    </form>
+        <p
+          id="passwordSetupMessage"
+          class="muted small"
+        >
+          Finish setting up your GlobalQuery account.
+        </p>
+
+        <form id="passwordSetupForm">
+
+          <div class="field">
+            <label for="newPassword">
+              New Password
+            </label>
+
+            <input
+              id="newPassword"
+              class="input"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="confirmPassword">
+              Confirm Password
+            </label>
+
+            <input
+              id="confirmPassword"
+              class="input"
+              type="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            >
+          </div>
+
+          <button
+            type="submit"
+            class="btn primary auth-submit"
+          >
+            Save Password
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ======================================================
+       GLOBALQUERY APP
+       ====================================================== -->
+
+  <div
+    id="globalQueryApp"
+    hidden
+  >
+
+    <header class="app-header">
+
+      <div class="brand-mark">
+        <img
+          src="./icons/icon-192.png"
+          alt="GlobalQuery"
+        >
+      </div>
+
+      <div class="brand-copy">
+        <h1>API GlobalQuery</h1>
+
+        <p>
+          Case intelligence, agency trends,
+          and churn monitoring
+        </p>
+      </div>
+
+      <span class="version-pill">
+        Version 2.0
+      </span>
+
+    </header>
+
+
+    <div class="app-shell">
+
+      <main class="main-card">
+
+        <nav
+          class="tabs"
+          aria-label="GlobalQuery sections"
+        >
+          <button
+            class="tab-btn active"
+            data-tab="casesTab"
+          >
+            Cases
+          </button>
+
+          <button
+            class="tab-btn"
+            data-tab="agenciesTab"
+          >
+            Agencies
+          </button>
+
+          <button
+            class="tab-btn"
+            data-tab="churnTab"
+          >
+            Churn
+          </button>
+        </nav>
+
+
+        <!-- ==================================================
+             CASES
+             ================================================== -->
+
+        <section
+          id="casesTab"
+          class="tab-panel active"
+        >
+          <div class="section">
+
+            <div class="section-header">
+              <div>
+                <h2>Case Search</h2>
+
+                <p>
+                  Search the current and historical
+                  case dataset.
+                </p>
+              </div>
+            </div>
+
+
+            <div class="filters-grid">
+
+              <div class="field">
+                <label for="filterCaseNum">
+                  Case number
+                </label>
+
+                <input
+                  id="filterCaseNum"
+                  class="input"
+                  type="text"
+                  placeholder="H-300-#####-######"
+                >
+              </div>
+
+
+              <div class="field">
+                <label for="filterEmployer">
+                  Employer name
+                </label>
+
+                <input
+                  id="filterEmployer"
+                  class="input"
+                  type="text"
+                >
+              </div>
+
+
+              <div class="field">
+                <label for="filterStart">
+                  Start (from)
+                </label>
+
+                <input
+                  id="filterStart"
+                  class="input"
+                  type="date"
+                >
+              </div>
+
+
+              <div class="field">
+                <label for="filterEnd">
+                  Start (end)
+                </label>
+
+                <input
+                  id="filterEnd"
+                  class="input"
+                  type="date"
+                >
+              </div>
+
+
+              <div class="field">
+                <label for="filterState">
+                  Employer state
+                </label>
+
+                <select
+                  id="filterState"
+                  class="select"
+                >
+                  <option value="">
+                    All states
+                  </option>
+
+                  <option>CA</option>
+                  <option>FL</option>
+                  <option>GA</option>
+                  <option>MI</option>
+                  <option>NC</option>
+                  <option>NY</option>
+                  <option>TX</option>
+                  <option>WA</option>
+                </select>
+              </div>
+
+
+              <div class="field">
+                <label for="filterAgent">
+                  Agent
+                </label>
+
+                <select
+                  id="filterAgent"
+                  class="select"
+                >
+                  <option value="">
+                    All agencies
+                  </option>
+                </select>
+              </div>
+
+            </div>
+
+
+            <div class="toolbar">
+
+              <button
+                id="applyFiltersBtn"
+                class="btn primary"
+                type="button"
+              >
+                ⌕ Search
+              </button>
+
+              <button
+                id="clearFiltersBtn"
+                class="btn"
+                type="button"
+              >
+                ⟲ Reset
+              </button>
+
+              <button
+                id="downloadCsvButton"
+                class="btn"
+                type="button"
+              >
+                ⬇ Get CSV
+              </button>
+
+              <span
+                id="rowCountLabel"
+                class="muted small"
+              >
+                Loading cases...
+              </span>
+
+              <span class="spacer"></span>
+
+              <label
+                class="small muted"
+                for="caseLimit"
+              >
+                Display
+              </label>
+
+              <select
+                id="caseLimit"
+                class="select"
+                style="
+                  width:auto;
+                  min-height:38px;
+                  padding:7px 32px 7px 10px;
+                "
+              >
+                <option selected>25</option>
+                <option>50</option>
+                <option>100</option>
+                <option>250</option>
+              </select>
+
+            </div>
+
+
+            <div class="table-wrap">
+
+              <table id="casesTable">
+
+                <thead>
+                  <tr>
+                    <th>Case Number</th>
+                    <th>Employer Name</th>
+                    <th>Period of Need</th>
+                    <th>Agency</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr>
+                    <td
+                      colspan="4"
+                      class="center muted"
+                    >
+                      Loading cases...
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ==================================================
+             AGENCIES
+             ================================================== -->
+
+        <section
+          id="agenciesTab"
+          class="tab-panel"
+        >
+          <div class="section">
+
+            <div class="section-header">
+              <div>
+                <h2>Agency Leaderboard</h2>
+
+                <p>
+                  Compare filing volume between years.
+                  Note: Percent Change is between last year
+                  &amp; the year prior.
+                </p>
+              </div>
+            </div>
+
+
+            <div
+              class="table-wrap agency-table-wrap"
+            >
+
+              <table id="agenciesTable">
+
+                <thead>
+                  <tr>
+                    <th class="agency-column">
+                      Agency
+                    </th>
+
+                    <th class="center">
+                      Current
+                    </th>
+
+                    <th class="center">
+                      Churn
+                    </th>
+
+                    <th class="center">
+                      Prior
+                    </th>
+
+                    <th class="center">
+                      Earlier
+                    </th>
+
+                    <th class="center">
+                      Change
+                    </th>
+                  </tr>
+                </thead>
+
+
+                <tbody>
+                  <tr>
+                    <td
+                      colspan="6"
+                      class="center muted"
+                    >
+                      Open the Agencies tab to load
+                      agency data.
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ==================================================
+             CHURN
+             ================================================== -->
+
+        <section
+          id="churnTab"
+          class="tab-panel"
+        >
+
+          <div class="section">
+
+            <div class="section-header">
+              <div>
+                <h2>Agency Churn</h2>
+
+                <p>
+                  Review gains and losses for one agency,
+                  then scan broader recent movement.
+                </p>
+              </div>
+            </div>
+
+
+            <div
+              class="field"
+              style="max-width:420px"
+            >
+              <label for="churnAgencySelect">
+                Agency
+              </label>
+
+              <select
+                id="churnAgencySelect"
+                class="select"
+                disabled
+              >
+                <option value="">
+                  Open the Churn tab to load agencies
+                </option>
+              </select>
+            </div>
+
+
+            <div class="metric-grid">
+
+              <div class="metric gain">
+                <div class="label">
+                  Gains
+                </div>
+
+                <div
+                  id="gainMetric"
+                  class="value"
+                >
+                  0
+                </div>
+              </div>
+
+
+              <div class="metric loss">
+                <div class="label">
+                  Losses
+                </div>
+
+                <div
+                  id="lossMetric"
+                  class="value"
+                >
+                  0
+                </div>
+              </div>
+
+
+              <div class="metric">
+                <div class="label">
+                  Net
+                </div>
+
+                <div
+                  id="netMetric"
+                  class="value"
+                >
+                  0
+                </div>
+              </div>
+
+
+              <div class="metric">
+                <div class="label">
+                  Activity
+                </div>
+
+                <div
+                  id="activityMetric"
+                  class="value"
+                >
+                  0
+                </div>
+              </div>
+
+            </div>
+
+
+            <div
+              class="section-header"
+              style="margin-top:8px"
+            >
+              <div>
+                <h3>
+                  Selected Agency Activity
+                </h3>
+
+                <p>
+                  Each record is interpreted relative
+                  to the selected agency.
+                </p>
+              </div>
+            </div>
+
+
+            <div class="churn-filter-row">
+
+              <label class="toggle">
+                <input
+                  id="showAgencyGains"
+                  type="checkbox"
+                  checked
+                >
+                Gains
+              </label>
+
+              <label class="toggle">
+                <input
+                  id="showAgencyLosses"
+                  type="checkbox"
+                  checked
+                >
+                Losses
+              </label>
+
+              <label class="toggle">
+                <input
+                  id="showAgencySwitches"
+                  type="checkbox"
+                  checked
+                >
+                Switches
+              </label>
+
+            </div>
+
+
+            <div class="table-wrap">
+
+              <table id="agencyChurnTable">
+
+                <thead>
+                  <tr>
+                    <th style="width:88px">
+                      Type
+                    </th>
+
+                    <th>
+                      Employer
+                    </th>
+
+                    <th>
+                      Details
+                    </th>
+
+                    <th style="width:140px">
+                      Date
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody></tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+
+          <div class="section">
+
+            <div class="section-header">
+              <div>
+                <h3>Recent Churn</h3>
+
+                <p>
+                  Recent changes across all tracked
+                  agencies.
+                </p>
+              </div>
+            </div>
+
+
+            <div class="churn-filter-row">
+
+              <label class="toggle">
+                <input
+                  id="showGains"
+                  type="checkbox"
+                  checked
+                >
+                Gains
+              </label>
+
+              <label class="toggle">
+                <input
+                  id="showLosses"
+                  type="checkbox"
+                  checked
+                >
+                Losses
+              </label>
+
+              <label class="toggle">
+                <input
+                  id="showSwitches"
+                  type="checkbox"
+                  checked
+                >
+                Switches
+              </label>
+
+              <span class="spacer"></span>
+
+              <input
+                id="recentChurnSearch"
+                class="input"
+                style="max-width:280px"
+                placeholder="Search employer or agency"
+              >
+
+            </div>
+
+
+            <div class="table-wrap">
+
+              <table id="recentChurnTable">
+
+                <thead>
+                  <tr>
+                    <th style="width:88px">
+                      Type
+                    </th>
+
+                    <th>
+                      Employer
+                    </th>
+
+                    <th>
+                      Details
+                    </th>
+
+                    <th style="width:140px">
+                      Date
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody></tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </main>
+
+
+      <!-- ==================================================
+           SIDEBAR
+           ================================================== -->
+
+      <aside class="sidebar">
+
+        <section class="side-card">
+
+          <h3>About</h3>
+
+          <p class="muted small">
+            API GlobalQuery 2.0 provides browser-based
+            case search, agency intelligence, and churn
+            monitoring.
+          </p>
+
+          <p
+            class="muted small"
+            style="margin-bottom:0"
+          >
+            Built for Agri Placements International.
+          </p>
+
+        </section>
+
+
+        <section class="side-card">
+
+          <h3>Account</h3>
+
+          <p
+            id="signedInUser"
+            class="muted small"
+          >
+            Signed in
+          </p>
+
+          <button
+            id="signOutButton"
+            class="btn"
+            type="button"
+          >
+            Sign Out
+          </button>
+
+        </section>
+
+      </aside>
+
+    </div>
+
   </div>
-</section>
 
-<main id="app" hidden>
-  <!-- GlobalQuery UI goes here -->
-</main>
+
+  <!-- ======================================================
+       CASE MODAL
+       ======================================================
+
+       We will port the existing GAS CaseModal.html markup
+       into this spot next.
+  -->
+
+  <!-- ======================================================
+     CASE MODAL
+     ====================================================== -->
+
+  <div id="detailModalOverlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div id="detailModalTitle" class="modal-title">Case</div>
+          <div id="detailModalEmployer" class="muted">Employer</div>
+        </div>
+        <button id="closeModalBtn" class="btn icon" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="churnBanner" class="churn-banner hidden"></div>
+        <div id="modalActionRow" class="modal-actions">
+          <button id="copyJfBtn" class="btn primary" type="button">Copy JF</button>
+          <button id="openJfBtn" class="btn primary" type="button">Open JF</button>
+          <button id="seasonalJobsBtn" class="btn primary" type="button" >SeasonalJobs</button>
+          <button id="jobOrderBtn" class="btn primary" type="button">Job Order</button>
+        </div>
+        <div class="modal-grid">
+          <div id="modalBusinessJobSection" class="modal-panel">
+            <h4>Business &amp; Job Info</h4>
+            <div class="kv" id="modalCaseInfo"></div>
+          </div>
+          <div id="modalJobDescriptionSection" class="modal-panel">
+            <h4>Job Description</h4>
+            <div id="modalJobDesc" class="muted"> — </div>
+          </div>
+          <div id="modalChurnInfoPanel" class="modal-panel full hidden">
+            <h4>Churn Information</h4>
+            <div class="kv" id="modalChurnInfo"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================
+       JAVASCRIPT
+       ====================================================== -->
+
+  <!-- Supabase browser client -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  ></script>
+
+  <!-- GlobalQuery modules -->
+  <script src="./js/supabase.js"></script>
+  <script src="./js/ui.js"></script>
+  <script src="./js/cases.js"></script>
+  <script src="./js/agencies.js"></script>
+  <script src="./js/churn.js"></script>
+  <script src="./js/app.js"></script>
+
+
+  <!-- PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener(
+        'load',
+        function() {
+          navigator.serviceWorker
+            .register(
+              './service-worker.js'
+            )
+            .catch(function(error) {
+              console.error(
+                'Service worker registration failed:',
+                error
+              );
+            });
+        }
+      );
+    }
+  </script>
+
+</body>
+</html>
