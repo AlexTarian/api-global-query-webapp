@@ -77,6 +77,47 @@ function mapChurnRow_(row) {
   };
 }
 
+async function fetchAllChurnRows_() {
+  const batchSize = 1000;
+  const allRows = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await window.globalQuerySupabase
+      .from('churn')
+      .select(`
+        churn_id,
+        fein,
+        employer_name,
+        series_key,
+        current_case_num,
+        prior_case_num,
+        classification,
+        detected_at,
+        current_agency_key,
+        prior_agency_key,
+        churn_current_agencies(agencies(normalized_name,display_name)),
+        churn_prior_agencies(agencies(normalized_name,display_name))
+      `)
+      .order('detected_at', { ascending: false })
+      .order('churn_id', { ascending: false })
+      .range(from, from + batchSize - 1);
+
+    if (error) throw error;
+
+    const rows = data || [];
+    allRows.push(...rows);
+
+    if (rows.length < batchSize) break;
+
+    from += batchSize;
+  }
+
+  console.log('Total churn rows loaded:', allRows.length);
+
+  return allRows;
+}
+
 async function loadGlobalQueryChurn() {
   console.log('loadGlobalQueryChurn started');
   
@@ -89,25 +130,8 @@ async function loadGlobalQueryChurn() {
   setChurnLoading_(true);
 
   try {
-    const [churnResult, agencyResult] = await Promise.all([
-      window.globalQuerySupabase
-        .from('churn')
-        .select(`
-          churn_id,
-          fein,
-          employer_name,
-          series_key,
-          current_case_num,
-          prior_case_num,
-          classification,
-          detected_at,
-          current_agency_key,
-          prior_agency_key,
-          churn_current_agencies(agencies(normalized_name,display_name)),
-          churn_prior_agencies(agencies(normalized_name,display_name))
-        `)
-        .order('detected_at', { ascending: false })
-        .order('churn_id', { ascending: false }),
+    const [churnRows, agencyResult] = await Promise.all([
+      fetchAllChurnRows_(),
 
       window.globalQuerySupabase
         .from('agencies')
@@ -115,10 +139,11 @@ async function loadGlobalQueryChurn() {
         .order('display_name', { ascending: true })
     ]);
 
-    if (churnResult.error) throw churnResult.error;
-    if (agencyResult.error) throw agencyResult.error;
+if (agencyResult.error) throw agencyResult.error;
 
-    churn = (churnResult.data || []).map(mapChurnRow_).filter(item => item.type);
+churn = churnRows.map(mapChurnRow_).filter(item => item.type);
+
+console.log('Mapped churn rows:', churn.length);
     populateChurnAgencyDropdown_(agencyResult.data || []);
 
     globalQueryChurnLoaded = true;
