@@ -75,7 +75,14 @@ function initializeTabs() {
       document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === targetId));
 
       if (targetId === 'agenciesTab' && typeof window.loadGlobalQueryAgencies === 'function') window.loadGlobalQueryAgencies();
-      if (targetId === 'churnTab' && typeof window.loadGlobalQueryChurn === 'function') window.loadGlobalQueryChurn();
+      if (targetId === 'churnTab') {
+        console.log('Churn tab clicked');
+        console.log('loadGlobalQueryChurn:', typeof window.loadGlobalQueryChurn);
+
+        if (typeof window.loadGlobalQueryChurn === 'function') {
+          window.loadGlobalQueryChurn();
+        }
+      }
     });
   });
 }
