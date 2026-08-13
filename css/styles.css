@@ -23,6 +23,11 @@
   }
 
   * { box-sizing: border-box; }
+
+  [hidden] {
+    display: none !important;
+  }
+
   html, body {
     width: 100%;
     max-width: 100%;
