@@ -45,14 +45,32 @@ async function handleLogin(event) {
 
   message.textContent = 'Signing in...';
 
-  const { data, error } = await window.globalQuerySupabase.auth.signInWithPassword({ email, password });
+  try {
+    console.log('Attempting Supabase sign-in for:', email);
 
-  if (error) {
-    message.textContent = error.message;
-    return;
+    const { data, error } = await window.globalQuerySupabase.auth.signInWithPassword({ email, password });
+
+    console.log('Supabase sign-in response:', { data, error });
+
+    if (error) {
+      message.textContent = error.message;
+      console.error('Supabase sign-in failed:', error);
+      return;
+    }
+
+    if (!data?.session) {
+      message.textContent = 'Sign-in succeeded, but no session was returned.';
+      console.warn('No session returned:', data);
+      return;
+    }
+
+    console.log('Supabase session established:', data.session.user.email);
+    showGlobalQuery(data.session);
+
+  } catch (error) {
+    console.error('Unexpected login error:', error);
+    message.textContent = 'Login failed. Check the browser console for details.';
   }
-
-  showGlobalQuery(data.session);
 }
 
 async function handlePasswordSetup(event) {
