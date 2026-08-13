@@ -1,3 +1,5 @@
+console.log('churn.js loaded');
+
 let churn = [];
 let globalQueryChurnLoaded = false;
 let churnInitialized = false;
@@ -76,6 +78,8 @@ function mapChurnRow_(row) {
 }
 
 async function loadGlobalQueryChurn() {
+  console.log('loadGlobalQueryChurn started');
+  
   if (globalQueryChurnLoaded) {
     renderAgencyChurn();
     renderRecentChurn();
