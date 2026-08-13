@@ -127,11 +127,18 @@ function showPasswordSetup() {
 }
 
 function showGlobalQuery(session) {
+  console.log('showGlobalQuery started');
+
   document.getElementById('authScreen').hidden = true;
   document.getElementById('globalQueryApp').hidden = false;
 
-  document.getElementById('signedInUser').textContent =
-    session?.user?.email
+  const signedInUser = document.getElementById('signedInUser');
+
+  if (signedInUser) {
+    signedInUser.textContent = session?.user?.email
       ? `Signed in as ${session.user.email}`
       : 'Signed in';
+  }
+
+  console.log('showGlobalQuery finished');
 }
