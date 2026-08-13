@@ -127,18 +127,18 @@ function showPasswordSetup() {
 }
 
 function showGlobalQuery(session) {
-  console.log('showGlobalQuery started');
-
   document.getElementById('authScreen').hidden = true;
   document.getElementById('globalQueryApp').hidden = false;
 
-  const signedInUser = document.getElementById('signedInUser');
+  document.getElementById('signedInUser').textContent = session?.user?.email
+    ? `Signed in as ${session.user.email}`
+    : 'Signed in';
 
-  if (signedInUser) {
-    signedInUser.textContent = session?.user?.email
-      ? `Signed in as ${session.user.email}`
-      : 'Signed in';
+  if (typeof window.GlobalQueryUI?.initializeTabs === 'function') {
+    window.GlobalQueryUI.initializeTabs();
   }
 
-  console.log('showGlobalQuery finished');
+  if (typeof window.initializeCases === 'function') {
+    window.initializeCases();
+  }
 }
