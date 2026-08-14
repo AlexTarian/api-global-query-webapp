@@ -38,7 +38,7 @@ async function loadGlobalQueryAgencies() {
 
     globalQueryAgencyRows = Array.isArray(data) ? data : [];
     globalQueryAgenciesLoaded = true;
-    renderAgencyLeaderboard();
+    ();
   } catch (error) {
     console.error('Agency leaderboard error:', error);
     tableBody.innerHTML = `<tr><td colspan="6" class="center error-cell">${GlobalQueryUI.escapeHtml_(GlobalQueryUI.getErrorMessage_(error))}</td></tr>`;
@@ -58,7 +58,7 @@ function renderAgencyLeaderboard() {
 
   const analysisYear = Number(rows[0].analysis_year) || 0;
   headers[1].textContent = analysisYear || 'Current';
-  headers[2].textContent = 'Churn';
+  headers[2].textContent = 'Chrn';
   headers[3].textContent = analysisYear ? analysisYear - 1 : 'Prior';
   headers[4].textContent = analysisYear ? analysisYear - 2 : 'Earlier';
   headers[5].textContent = 'Change';
