@@ -38,7 +38,7 @@ async function loadGlobalQueryAgencies() {
 
     globalQueryAgencyRows = Array.isArray(data) ? data : [];
     globalQueryAgenciesLoaded = true;
-    ();
+    renderAgencyLeaderboard();
   } catch (error) {
     console.error('Agency leaderboard error:', error);
     tableBody.innerHTML = `<tr><td colspan="6" class="center error-cell">${GlobalQueryUI.escapeHtml_(GlobalQueryUI.getErrorMessage_(error))}</td></tr>`;
