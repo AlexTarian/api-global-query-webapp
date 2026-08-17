@@ -216,8 +216,7 @@ function openCaseModal(caseRow, mode = 'case') {
       ['Agency', GlobalQueryUI.escapeHtml_(caseRow.displayAgency || caseRow.agency || '—')]
     ]);
 
-    const desc = caseRow.desc ? `${caseRow.desc}${caseRow.desc.length >= 750 ? '…' : ''}` : '—';
-    document.getElementById('modalJobDesc').textContent = desc;
+    renderModalJobDescription_(caseRow);
   }
 
   modal.classList.remove('hidden');
@@ -263,6 +262,218 @@ async function copyTextToClipboard_(text) {
 
 function closeCaseModal_() {
   document.getElementById('detailModalOverlay').classList.add('hidden');
+}
+
+async function downloadFilteredGlobalQueryCases() {
+  const button = document.getElementById('downloadCsvButton');
+  const filters = getCurrentGlobalQueryFilters();
+  const originalText = button.textContent;
+
+  const confirmed = window.confirm('Export all cases matching the current filters?');
+  if (!confirmed) return;
+
+  button.disabled = true;
+  button.textContent = 'Preparing CSV...';
+
+  try {
+    const rows = await fetchAllFilteredGlobalQueryCases_(filters);
+
+    if (!rows.length) {
+      alert('No cases matched the selected filters.');
+      return;
+    }
+
+    const csvText = buildGlobalQueryCsv_(rows);
+    const filename = `GlobalQuery_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    const blob = new Blob(['\uFEFF' + csvText], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('CSV export failed:', error);
+    alert(`The CSV export failed: ${GlobalQueryUI.getErrorMessage_(error)}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
+
+async function fetchAllFilteredGlobalQueryCases_(filters) {
+  const batchSize = 1000;
+  const allRows = [];
+  let from = 0;
+
+  while (true) {
+    let query = window.globalQuerySupabase
+      .from('cases')
+      .select(`
+        case_num,
+        h2alc,
+        employer_name,
+        employer_address,
+        employer_state,
+        fein,
+        contact_name,
+        contact_phone,
+        contact_email,
+        h2a_workers,
+        start_date,
+        end_date,
+        job_description_preview,
+        cert_req,
+        drive_req,
+        has_multiple_worksites,
+        has_multiple_housing,
+        case_agencies(
+          agencies(
+            normalized_name,
+            display_name
+          )
+        )
+      `)
+      .order('case_num', { ascending: false })
+      .range(from, from + batchSize - 1);
+
+    if (filters.caseNum) query = query.ilike('case_num', `%${filters.caseNum}%`);
+    if (filters.employer) query = query.ilike('employer_name', `%${filters.employer}%`);
+    if (filters.state) query = query.eq('employer_state', filters.state);
+    if (filters.start) query = query.gte('start_date', filters.start);
+    if (filters.end) query = query.lte('start_date', filters.end);
+
+    if (filters.agency) {
+      query = query
+        .select(`
+          case_num,
+          h2alc,
+          employer_name,
+          employer_address,
+          employer_state,
+          fein,
+          contact_name,
+          contact_phone,
+          contact_email,
+          h2a_workers,
+          start_date,
+          end_date,
+          job_description_preview,
+          cert_req,
+          drive_req,
+          has_multiple_worksites,
+          has_multiple_housing,
+          case_agencies!inner(
+            agencies!inner(
+              normalized_name,
+              display_name
+            )
+          )
+        `)
+        .eq('case_agencies.agencies.normalized_name', filters.agency);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    const rows = (data || []).map(mapCaseRow_);
+    allRows.push(...rows);
+
+    if (!data || data.length < batchSize) break;
+
+    from += batchSize;
+  }
+
+  return allRows;
+}
+
+function renderModalJobDescription_(row) {
+  const container = document.getElementById('modalJobDesc');
+  const description = row.desc || '';
+
+  if (!description) {
+    container.textContent = '—';
+    return;
+  }
+
+  if (description.length >= 750 && row.caseNum) {
+    container.innerHTML =
+      `${GlobalQueryUI.escapeHtml_(description)}... ` +
+      `<a href="${GlobalQueryUI.escapeHtml_(getSeasonalJobsUrl_(row))}" target="_blank" rel="noopener noreferrer">See more on SJ page</a>`;
+  } else {
+    container.textContent = description;
+  }
+}
+
+function buildGlobalQueryCsv_(rows) {
+  const headers = [
+    'Case Number',
+    'Employer',
+    'FEIN',
+    'H-2ALC',
+    'Agency',
+    'H-2A Workers',
+    'Start Date',
+    'End Date',
+    'Employer Address',
+    'State',
+    'Contact Name',
+    'Contact Phone',
+    'Contact Email',
+    'Job Description'
+  ];
+
+  const csvRows = [headers.map(escapeCsvValue_).join(',')];
+
+  rows.forEach(row => {
+    csvRows.push([
+      row.caseNum,
+      row.employer,
+      row.fein,
+      formatCsvBoolean_(row.h2alc),
+      row.displayAgency || row.agency,
+      row.workers,
+      row.start,
+      row.end,
+      row.address,
+      row.state,
+      row.contact,
+      row.phone,
+      row.email,
+      getCsvDescription_(row)
+    ].map(escapeCsvValue_).join(','));
+  });
+
+  return csvRows.join('\r\n');
+}
+
+function getCsvDescription_(row) {
+  const description = row.desc || '';
+
+  return description.length >= 750
+    ? `${description}...See more on SJ page`
+    : description;
+}
+
+function escapeCsvValue_(value) {
+  const text = value == null ? '' : String(value);
+
+  if (!/[,"\r\n]/.test(text)) return text;
+
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function formatCsvBoolean_(value) {
+  if (value === true) return 'Y';
+  if (value === false) return 'N';
+  return '';
 }
 
 function bindCaseEvents_() {
@@ -312,9 +523,7 @@ function bindCaseEvents_() {
     try { openExternalUrl_(getJobOrderUrl_(activeCaseModalRow)); } catch (error) { console.error('Could not open the job order:', error); }
   });
 
-  document.getElementById('downloadCsvButton').addEventListener('click', () => {
-    alert('CSV export will be ported after the Supabase case search is validated.');
-  });
+  document.getElementById('downloadCsvButton').addEventListener('click', downloadFilteredGlobalQueryCases);
 }
 
 async function initializeCases() {
