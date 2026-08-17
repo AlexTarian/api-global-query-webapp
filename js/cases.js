@@ -462,8 +462,16 @@ function getCsvDescription_(row) {
     : description;
 }
 
+function cleanCsvText_(value) {
+  return String(value ?? '')
+    .replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\r?\n */g, '\n')
+    .trim();
+}
+
 function escapeCsvValue_(value) {
-  const text = value == null ? '' : String(value);
+  const text = cleanCsvText_(value);
 
   if (!/[,"\r\n]/.test(text)) return text;
 
