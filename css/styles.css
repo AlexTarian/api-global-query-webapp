@@ -350,6 +350,12 @@
   z-index: 2;
 }
 
+#agenciesTable th,
+#agenciesTable td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
 /* Agency column takes all remaining space. */
 #agenciesTable th:first-child,
 #agenciesTable td:first-child {
