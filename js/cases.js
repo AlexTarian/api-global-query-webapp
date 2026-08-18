@@ -203,6 +203,7 @@ function openCaseModal(caseRow, mode = 'case') {
   if (mode === 'case') {
     GlobalQueryUI.appendKv(document.getElementById('modalCaseInfo'), [
       ['Address', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(caseRow.address) || '—')],
+      ['FEIN', GlobalQueryUI.escapeHtml_(caseRow.fein || '—')],
       ['Contact', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(caseRow.contact) || '—')],
       ['Phone', GlobalQueryUI.escapeHtml_(caseRow.phone || '—')],
       ['Email', GlobalQueryUI.escapeHtml_(caseRow.email || '—')],
