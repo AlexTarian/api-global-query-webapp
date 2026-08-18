@@ -352,8 +352,8 @@
 
 #agenciesTable th,
 #agenciesTable td {
-  padding-top: 7px;
-  padding-bottom: 7px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 /* Agency column takes all remaining space. */
@@ -403,6 +403,14 @@
   white-space: nowrap;
 }
 
+
+.agency-worker-count {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
 @media (max-width: 600px) {
   #agenciesTable {
     min-width: 0;
@@ -411,7 +419,7 @@
 
   #agenciesTable th,
   #agenciesTable td {
-    padding: 9px 5px;
+    padding: 6px 5px;
   }
 
   #agenciesTable th:nth-child(2),
@@ -580,12 +588,6 @@
   .churn-banner.gain { border-left-color: var(--gain); background: var(--gain-soft); }
   .churn-banner.loss { border-left-color: var(--loss); background: var(--loss-soft); }
 
-  .agency-worker-count {
-    display: block;
-    margin-top: 2px;
-    font-size: 0.8em;
-    color: var(--muted);
-  }
 
   @media (max-width: 1050px) {
     .app-shell {
