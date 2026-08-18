@@ -19,8 +19,11 @@ async function loadGlobalQueryAgencies() {
         display_name,
         analysis_year,
         current_count,
+        current_workers,
         prior_count,
+        prior_workers,
         earlier_count,
+        earlier_workers,
         change_count,
         change_percent,
         previous_employers,
@@ -65,8 +68,11 @@ function renderAgencyLeaderboard() {
 
   tableBody.innerHTML = rows.map(row => {
     const currentCount = Number(row.current_count) || 0;
+    const currentWorkers = Number(row.current_workers) || 0;
     const priorCount = Number(row.prior_count) || 0;
+    const priorWorkers = Number(row.prior_workers) || 0;
     const earlierCount = Number(row.earlier_count) || 0;
+    const earlierWorkers = Number(row.earlier_workers) || 0;
     const changeCount = Number(row.change_count) || 0;
 
     const changePercent = row.change_percent === null || row.change_percent === undefined || row.change_percent === ''
@@ -108,10 +114,10 @@ function renderAgencyLeaderboard() {
     return `
       <tr>
         <td class="ellipsis agency-column" title="${GlobalQueryUI.escapeHtml_(displayName)}">${GlobalQueryUI.escapeHtml_(displayName)}</td>
-        <td class="center">${currentCount.toLocaleString()}<span class="agency-worker-count">12,680</span></td>
+        <td class="center">${currentCount.toLocaleString()}<span class="agency-worker-count">${currentWorkers.toLocaleString()}</span></td>
         <td class="center" title="${GlobalQueryUI.escapeHtml_(churnTooltip)}"><span class="${churnClass}"><strong>${churnText}</strong></span></td>
-        <td class="center">${priorCount.toLocaleString()}<span class="agency-worker-count">12,680</span></td>
-        <td class="center">${earlierCount.toLocaleString()}<span class="agency-worker-count">12,680</span></td>
+        <td class="center">${priorCount.toLocaleString()}<span class="agency-worker-count">${priorWorkers.toLocaleString()}</span></td>
+        <td class="center">${earlierCount.toLocaleString()}<span class="agency-worker-count">${earlierWorkers.toLocaleString()}</span></td>
         <td class="center ${changeClass}">${percentageText}</td>
       </tr>
     `;
