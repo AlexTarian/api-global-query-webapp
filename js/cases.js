@@ -202,8 +202,8 @@ function openCaseModal(caseRow, mode = 'case') {
 
   if (mode === 'case') {
     GlobalQueryUI.appendKv(document.getElementById('modalCaseInfo'), [
-      ['Address', GlobalQueryUI.escapeHtml_(caseRow.address || '—')],
-      ['Contact', GlobalQueryUI.escapeHtml_(caseRow.contact || '—')],
+      ['Address', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(caseRow.address) || '—')],
+      ['Contact', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(caseRow.contact) || '—')],
       ['Phone', GlobalQueryUI.escapeHtml_(caseRow.phone || '—')],
       ['Email', GlobalQueryUI.escapeHtml_(caseRow.email || '—')],
       ['Period of Need', `${GlobalQueryUI.formatDate(caseRow.start)} – ${GlobalQueryUI.formatDate(caseRow.end)}`],
@@ -462,7 +462,7 @@ function getCsvDescription_(row) {
     : description;
 }
 
-function cleanCsvText_(value) {
+function cleanGlobalQueryText_(value) {
   return String(value ?? '')
     .replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g, ' ')
     .replace(/[ \t]+/g, ' ')
@@ -471,7 +471,7 @@ function cleanCsvText_(value) {
 }
 
 function escapeCsvValue_(value) {
-  const text = cleanCsvText_(value);
+  const text = cleanGlobalQueryText_(value);
 
   if (!/[,"\r\n]/.test(text)) return text;
 
