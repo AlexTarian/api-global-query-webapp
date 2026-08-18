@@ -108,10 +108,10 @@ function renderAgencyLeaderboard() {
     return `
       <tr>
         <td class="ellipsis agency-column" title="${GlobalQueryUI.escapeHtml_(displayName)}">${GlobalQueryUI.escapeHtml_(displayName)}</td>
-        <td class="center">${currentCount.toLocaleString()}</td>
+        <td class="center">${currentCount.toLocaleString()}<span class="agency-worker-count">12,680</span></td>
         <td class="center" title="${GlobalQueryUI.escapeHtml_(churnTooltip)}"><span class="${churnClass}"><strong>${churnText}</strong></span></td>
-        <td class="center">${priorCount.toLocaleString()}</td>
-        <td class="center">${earlierCount.toLocaleString()}</td>
+        <td class="center">${priorCount.toLocaleString()}<span class="agency-worker-count">12,680</span></td>
+        <td class="center">${earlierCount.toLocaleString()}<span class="agency-worker-count">12,680</span></td>
         <td class="center ${changeClass}">${percentageText}</td>
       </tr>
     `;
