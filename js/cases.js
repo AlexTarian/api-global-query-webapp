@@ -10,6 +10,7 @@ function caseSelect_(agencyFiltered = false) {
 
   return `
     case_num,
+    case_status,
     h2alc,
     employer_name,
     employer_address,
@@ -21,6 +22,7 @@ function caseSelect_(agencyFiltered = false) {
     h2a_workers,
     start_date,
     end_date,
+    soc_code,
     job_description_preview,
     cert_req,
     drive_req,
@@ -38,6 +40,7 @@ function mapCaseRow_(row) {
 
   return {
     caseNum: row.case_num || '',
+    status: row.case_status || '',
     employer: row.employer_name || '',
     address: row.employer_address || '',
     state: row.employer_state || '',
@@ -48,6 +51,7 @@ function mapCaseRow_(row) {
     workers: row.h2a_workers ?? '',
     start: row.start_date || '',
     end: row.end_date || '',
+    socCode: row.soc_code || '',
     desc: row.job_description_preview || '',
     h2alc: row.h2alc,
     cert: row.cert_req,
@@ -207,6 +211,8 @@ function openCaseModal(caseRow, mode = 'case') {
       ['Contact', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(caseRow.contact) || '—')],
       ['Phone', GlobalQueryUI.escapeHtml_(caseRow.phone || '—')],
       ['Email', GlobalQueryUI.escapeHtml_(caseRow.email || '—')],
+      ['Status', GlobalQueryUI.escapeHtml_(caseRow.status || '—')],
+      ['SOC Code', GlobalQueryUI.escapeHtml_(caseRow.socCode || '—')],
       ['Period of Need', `${GlobalQueryUI.formatDate(caseRow.start)} – ${GlobalQueryUI.formatDate(caseRow.end)}`],
       ['Workers', GlobalQueryUI.escapeHtml_(caseRow.workers ?? '—')],
       ['H-2ALC', GlobalQueryUI.formatBoolean_(caseRow.h2alc)],
