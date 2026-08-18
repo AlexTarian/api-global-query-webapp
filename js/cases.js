@@ -324,6 +324,7 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
       .from('cases')
       .select(`
         case_num,
+        case_status,
         h2alc,
         employer_name,
         employer_address,
@@ -335,6 +336,7 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
         h2a_workers,
         start_date,
         end_date,
+        soc_code,
         job_description_preview,
         cert_req,
         drive_req,
@@ -360,6 +362,7 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
       query = query
         .select(`
           case_num,
+          case_status,
           h2alc,
           employer_name,
           employer_address,
@@ -371,6 +374,7 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
           h2a_workers,
           start_date,
           end_date,
+          soc_code,
           job_description_preview,
           cert_req,
           drive_req,
@@ -422,6 +426,7 @@ function renderModalJobDescription_(row) {
 function buildGlobalQueryCsv_(rows) {
   const headers = [
     'Case Number',
+    'Status',
     'Employer',
     'FEIN',
     'H-2ALC',
@@ -434,6 +439,7 @@ function buildGlobalQueryCsv_(rows) {
     'Contact Name',
     'Contact Phone',
     'Contact Email',
+    'SOC Code',
     'Job Description'
   ];
 
@@ -442,6 +448,7 @@ function buildGlobalQueryCsv_(rows) {
   rows.forEach(row => {
     csvRows.push([
       row.caseNum,
+      row.status,
       row.employer,
       row.fein,
       formatCsvBoolean_(row.h2alc),
@@ -454,6 +461,7 @@ function buildGlobalQueryCsv_(rows) {
       row.contact,
       row.phone,
       row.email,
+      row.socCode,
       getCsvDescription_(row)
     ].map(escapeCsvValue_).join(','));
   });
