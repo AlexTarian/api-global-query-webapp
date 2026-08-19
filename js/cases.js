@@ -23,6 +23,7 @@ function caseSelect_(agencyFiltered = false) {
     start_date,
     end_date,
     soc_code,
+    job_title,
     job_description_preview,
     cert_req,
     drive_req,
@@ -52,6 +53,7 @@ function mapCaseRow_(row) {
     start: row.start_date || '',
     end: row.end_date || '',
     socCode: row.soc_code || '',
+    jobType: row.job_title || '',
     desc: row.job_description_preview || '',
     h2alc: row.h2alc,
     cert: row.cert_req,
@@ -79,7 +81,7 @@ async function searchGlobalQueryCases(filters) {
   const client = window.globalQuerySupabase;
   const agencyFiltered = Boolean(filters.agency);
 
-  let query = client.from('cases').select(caseSelect_(agencyFiltered), { count: 'exact' });
+  let query = client.from('cases_with_occupation').select(caseSelect_(agencyFiltered), { count: 'exact' });
 
   if (filters.caseNum) query = query.ilike('case_num', `%${filters.caseNum}%`);
   if (filters.employer) query = query.ilike('employer_name', `%${filters.employer}%`);
@@ -212,7 +214,7 @@ function openCaseModal(caseRow, mode = 'case') {
       ['Phone', GlobalQueryUI.escapeHtml_(caseRow.phone || '—')],
       ['Email', GlobalQueryUI.escapeHtml_(caseRow.email || '—')],
       ['Status', GlobalQueryUI.escapeHtml_(caseRow.status || '—')],
-      ['SOC Code', GlobalQueryUI.escapeHtml_(caseRow.socCode || '—')],
+      ['Job Type', GlobalQueryUI.escapeHtml_(caseRow.jobType || '—')],
       ['Period of Need', `${GlobalQueryUI.formatDate(caseRow.start)} – ${GlobalQueryUI.formatDate(caseRow.end)}`],
       ['Workers', GlobalQueryUI.escapeHtml_(caseRow.workers ?? '—')],
       ['H-2ALC', GlobalQueryUI.formatBoolean_(caseRow.h2alc)],
@@ -321,7 +323,7 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
 
   while (true) {
     let query = window.globalQuerySupabase
-      .from('cases')
+      .from('cases_with_occupation')
       .select(`
         case_num,
         case_status,
@@ -337,6 +339,7 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
         start_date,
         end_date,
         soc_code,
+        job_title,
         job_description_preview,
         cert_req,
         drive_req,
@@ -375,6 +378,7 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
           start_date,
           end_date,
           soc_code,
+          job_title,
           job_description_preview,
           cert_req,
           drive_req,
@@ -439,7 +443,7 @@ function buildGlobalQueryCsv_(rows) {
     'Contact Name',
     'Contact Phone',
     'Contact Email',
-    'SOC Code',
+    'Job Type',
     'Job Description'
   ];
 
@@ -461,7 +465,7 @@ function buildGlobalQueryCsv_(rows) {
       row.contact,
       row.phone,
       row.email,
-      row.socCode,
+      row.jobType,
       getCsvDescription_(row)
     ].map(escapeCsvValue_).join(','));
   });
