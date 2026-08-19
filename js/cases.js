@@ -199,9 +199,8 @@ async function loadJobTypeDropdown() {
 
   try {
     const { data, error } = await window.globalQuerySupabase
-      .from('occupations')
-      .select('soc_code,job_title,onet_code')
-      .like('onet_code', '%.00')
+      .from('case_job_types')
+      .select('soc_code,job_title')
       .order('job_title');
 
     if (error) throw error;
