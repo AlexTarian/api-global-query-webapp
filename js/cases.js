@@ -213,6 +213,9 @@ function openCaseModal(caseRow, mode = 'case') {
       ['Contact', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(caseRow.contact) || '—')],
       ['Phone', GlobalQueryUI.escapeHtml_(caseRow.phone || '—')],
       ['Email', GlobalQueryUI.escapeHtml_(caseRow.email || '—')],
+    ]);
+
+    GlobalQueryUI.appendKv(document.getElementById('modalJobInfo'), [
       ['Status', GlobalQueryUI.escapeHtml_(caseRow.status || '—')],
       ['Job Type', `
         <span class="modal-job-type" title="${GlobalQueryUI.escapeHtml_(
