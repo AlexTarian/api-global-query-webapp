@@ -583,6 +583,32 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  .modal-info-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .modal-info-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .modal-info-card h3 {
+    margin: 0 0 12px;
+  }
+
+  #modalBusinessInfo,
+  #modalJobInfo {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 8px 14px;
+    align-items: start;
+  }
+
   .kv { display: grid; grid-template-columns: minmax(125px, 0.42fr) 1fr; gap: 9px 12px; }
   .kv .k { color: var(--muted); font-weight: 700; }
   .kv .v { min-width: 0; overflow-wrap: anywhere; }
