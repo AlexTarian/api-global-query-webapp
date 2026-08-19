@@ -214,7 +214,15 @@ function openCaseModal(caseRow, mode = 'case') {
       ['Phone', GlobalQueryUI.escapeHtml_(caseRow.phone || '—')],
       ['Email', GlobalQueryUI.escapeHtml_(caseRow.email || '—')],
       ['Status', GlobalQueryUI.escapeHtml_(caseRow.status || '—')],
-      ['Job Type', GlobalQueryUI.escapeHtml_(caseRow.jobType || '—')],
+      ['Job Type', `
+        <span class="modal-job-type" title="${GlobalQueryUI.escapeHtml_(
+          caseRow.socCode && caseRow.jobType
+            ? `${caseRow.socCode}: ${caseRow.jobType}`
+            : caseRow.socCode || caseRow.jobType || '—'
+        )}">
+          ${caseRow.socCode ? `${GlobalQueryUI.escapeHtml_(caseRow.socCode)}: ` : ''}${GlobalQueryUI.escapeHtml_(caseRow.jobType || '—')}
+        </span>
+      `],
       ['Period of Need', `${GlobalQueryUI.formatDate(caseRow.start)} – ${GlobalQueryUI.formatDate(caseRow.end)}`],
       ['Workers', GlobalQueryUI.escapeHtml_(caseRow.workers ?? '—')],
       ['H-2ALC', GlobalQueryUI.formatBoolean_(caseRow.h2alc)],
