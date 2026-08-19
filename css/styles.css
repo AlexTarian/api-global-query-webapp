@@ -575,6 +575,14 @@
   }
   .modal-panel.full { grid-column: 1 / -1; }
   .modal-panel h4 { margin: 0 0 12px; }
+
+  .modal-job-type {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .kv { display: grid; grid-template-columns: minmax(125px, 0.42fr) 1fr; gap: 9px 12px; }
   .kv .k { color: var(--muted); font-weight: 700; }
   .kv .v { min-width: 0; overflow-wrap: anywhere; }
