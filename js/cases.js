@@ -73,6 +73,8 @@ function getCurrentGlobalQueryFilters() {
     start: document.getElementById('filterStart').value,
     end: document.getElementById('filterEnd').value,
     agency: document.getElementById('filterAgent').value,
+    status: document.getElementById('filterStatus').value,
+    jobType: document.getElementById('filterJobType').value,
     limit: Number(document.getElementById('caseLimit').value) || 25
   };
 }
@@ -89,6 +91,14 @@ async function searchGlobalQueryCases(filters) {
   if (filters.start) query = query.gte('start_date', filters.start);
   if (filters.end) query = query.lte('start_date', filters.end);
   if (filters.agency) query = query.eq('case_agencies.agencies.normalized_name', filters.agency);
+  if (filters.status) {
+    query = query.eq('case_status', filters.status);
+  }
+  if (filters.jobType) {
+    query = query.or(
+      `soc_code.eq.${filters.jobType},soc_code.like.${filters.jobType}.%`
+    );
+  }
 
   query = query.order('case_num', { ascending: false }).limit(filters.limit);
 
@@ -177,6 +187,72 @@ async function loadAgencyDropdown() {
   } catch (error) {
     console.error('Could not load agency options:', error);
     select.innerHTML = '<option value="">All Agencies</option>';
+  } finally {
+    select.disabled = false;
+  }
+}
+
+async function loadJobTypeDropdown() {
+  const select = document.getElementById('filterJobType');
+  select.disabled = true;
+  select.innerHTML = '<option value="">Loading job types…</option>';
+
+  try {
+    const { data, error } = await window.globalQuerySupabase
+      .from('occupations')
+      .select('soc_code,job_title,onet_code')
+      .like('onet_code', '%.00')
+      .order('job_title');
+
+    if (error) throw error;
+
+    select.innerHTML = '<option value="">All Job Types</option>';
+
+    (data || []).forEach(item => {
+      const option = document.createElement('option');
+      option.value = item.soc_code;
+      option.textContent = item.job_title;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Could not load job types:', error);
+    select.innerHTML = '<option value="">All Job Types</option>';
+  } finally {
+    select.disabled = false;
+  }
+}
+
+async function loadStatusDropdown() {
+  const select = document.getElementById('filterStatus');
+  select.disabled = true;
+  select.innerHTML = '<option value="">Loading statuses…</option>';
+
+  try {
+    const { data, error } = await window.globalQuerySupabase
+      .from('cases_with_occupation')
+      .select('case_status')
+      .not('case_status', 'is', null)
+      .order('case_status');
+
+    if (error) throw error;
+
+    const statuses = [...new Set(
+      (data || [])
+        .map(row => String(row.case_status || '').trim())
+        .filter(Boolean)
+    )];
+
+    select.innerHTML = '<option value="">All Statuses</option>';
+
+    statuses.forEach(status => {
+      const option = document.createElement('option');
+      option.value = status;
+      option.textContent = status;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Could not load statuses:', error);
+    select.innerHTML = '<option value="">All Statuses</option>';
   } finally {
     select.disabled = false;
   }
@@ -405,6 +481,16 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
         .eq('case_agencies.agencies.normalized_name', filters.agency);
     }
 
+    if (filters.status) {
+      query = query.eq('case_status', filters.status);
+    }
+
+    if (filters.jobType) {
+      query = query.or(
+        `soc_code.eq.${filters.jobType},soc_code.like.${filters.jobType}.%`
+      );
+    }
+
     const { data, error } = await query;
 
     if (error) throw error;
@@ -518,7 +604,7 @@ function bindCaseEvents_() {
   document.getElementById('applyFiltersBtn').addEventListener('click', applyCaseFilters);
 
   document.getElementById('clearFiltersBtn').addEventListener('click', () => {
-    ['filterCaseNum', 'filterEmployer', 'filterState', 'filterStart', 'filterEnd', 'filterAgent'].forEach(id => document.getElementById(id).value = '');
+    ['filterCaseNum', 'filterEmployer', 'filterState', 'filterStart', 'filterEnd', 'filterAgent', 'filterStatus', 'filterJobType'].forEach(id => document.getElementById(id).value = '');
     applyCaseFilters();
   });
 
@@ -570,7 +656,13 @@ async function initializeCases() {
 
   GlobalQueryUI.populateStateDropdown();
   bindCaseEvents_();
-  await loadAgencyDropdown();
+  
+  await Promise.all([
+    loadAgencyDropdown(),
+    loadJobTypeDropdown(),
+    loadStatusDropdown()
+  ]);
+  
   await applyCaseFilters();
 }
 
