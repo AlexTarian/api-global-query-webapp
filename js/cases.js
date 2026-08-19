@@ -229,22 +229,18 @@ async function loadStatusDropdown() {
 
   try {
     const { data, error } = await window.globalQuerySupabase
-      .from('cases_with_occupation')
+      .from('case_statuses')
       .select('case_status')
-      .not('case_status', 'is', null)
       .order('case_status');
 
     if (error) throw error;
 
-    const statuses = [...new Set(
-      (data || [])
-        .map(row => String(row.case_status || '').trim())
-        .filter(Boolean)
-    )];
-
     select.innerHTML = '<option value="">All Statuses</option>';
 
-    statuses.forEach(status => {
+    (data || []).forEach(row => {
+      const status = String(row.case_status || '').trim();
+      if (!status) return;
+
       const option = document.createElement('option');
       option.value = status;
       option.textContent = status;
