@@ -340,6 +340,28 @@
   overflow-x: hidden;
 }
 
+.agency-leaderboard-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.leaderboard-metric-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.agency-jump-control {
+  margin-left: auto;
+}
+
+#agencyJumpSearch {
+  width: 220px;
+}
+
 #agenciesTable {
   width: 100%;
   min-width: 0;
@@ -666,6 +688,19 @@
     .app-header {
       padding: 10px 12px;
       gap: 10px;
+    }
+
+    .agency-leaderboard-controls {
+      flex-wrap: wrap;
+    }
+
+    .agency-jump-control {
+      width: 100%;
+      margin-left: 0;
+    }
+
+    #agencyJumpSearch {
+      width: 100%;
     }
 
     .brand-mark {
