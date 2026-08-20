@@ -53,12 +53,24 @@ async function loadGlobalQueryAgencies() {
     if (error) throw error;
 
     globalQueryAgencyRows = Array.isArray(data) ? data : [];
+    populateAgencyJumpOptions_();
     globalQueryAgenciesLoaded = true;
     renderAgencyLeaderboard();
   } catch (error) {
     console.error('Agency leaderboard error:', error);
     tableBody.innerHTML = `<tr><td colspan="6" class="center error-cell">${GlobalQueryUI.escapeHtml_(GlobalQueryUI.getErrorMessage_(error))}</td></tr>`;
   }
+}
+
+function populateAgencyJumpOptions_() {
+  const datalist = document.getElementById('agencyJumpOptions');
+
+  datalist.innerHTML = globalQueryAgencyRows
+    .map(row => row.display_name || row.normalized_name)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))
+    .map(name => `<option value="${GlobalQueryUI.escapeHtml_(name)}"></option>`)
+    .join('');
 }
 
 function getAgencyMetricFields_() {
@@ -84,6 +96,42 @@ function getAgencyMetricFields_() {
         earlier: 'earlier_count'
       };
   }
+}
+
+function jumpToAgency_(searchValue) {
+  const search = String(searchValue || '').trim().toLowerCase();
+  if (!search) return;
+
+  const agency = globalQueryAgencyRows.find(row => {
+    const displayName = String(row.display_name || '').trim().toLowerCase();
+    const normalizedName = String(row.normalized_name || '').trim().toLowerCase();
+
+    return displayName === search || normalizedName === search;
+  });
+
+  if (!agency) return;
+
+  const row = document.querySelector(
+    `#agenciesTable tbody tr[data-agency-id="${agency.agency_id}"]`
+  );
+
+  if (!row) return;
+
+  row.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center'
+  });
+
+  row.classList.remove('agency-jump-highlight');
+
+  // Forces a restart if the same agency is searched twice.
+  void row.offsetWidth;
+
+  row.classList.add('agency-jump-highlight');
+
+  setTimeout(() => {
+    row.classList.remove('agency-jump-highlight');
+  }, 1800);
 }
 
 function getAgencySortKey_(sortKey) {
@@ -198,7 +246,7 @@ function renderAgencyLeaderboard() {
     const displayName = row.display_name || row.normalized_name || '—';
 
     return `
-      <tr>
+      <tr data-agency-id="${row.agency_id}">
         <td class="ellipsis agency-column" title="${GlobalQueryUI.escapeHtml_(displayName)}">${GlobalQueryUI.escapeHtml_(displayName)}</td>
         <td class="center">${currentValue.toLocaleString()}</td>
         <td class="center" title="${GlobalQueryUI.escapeHtml_(churnTooltip)}"><span class="${churnClass}"><strong>${churnText}</strong></span></td>
@@ -244,6 +292,18 @@ function bindAgencyLeaderboardControls_() {
 
       renderAgencyLeaderboard();
     });
+  });
+  const agencySearch = document.getElementById('agencyJumpSearch');
+
+  agencySearch.addEventListener('change', () => {
+    jumpToAgency_(agencySearch.value);
+  });
+
+  agencySearch.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      jumpToAgency_(agencySearch.value);
+    }
   });
 }
 
