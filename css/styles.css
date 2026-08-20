@@ -375,6 +375,11 @@
   font-size: 0.7em;
 }
 
+#agenciesTable tbody tr.agency-jump-highlight {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
 /* Agency column takes all remaining space. */
 #agenciesTable th:first-child,
 #agenciesTable td:first-child {
