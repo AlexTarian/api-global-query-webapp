@@ -3,7 +3,7 @@ let globalQueryAgencyRows = [];
 let agencyMetricMode = 'cases';
 let agencyControlsBound = false;
 let agencySort = {
-  key: 'current_count',
+  key: 'current',
   direction: 'desc'
 };
 
@@ -86,13 +86,41 @@ function getAgencyMetricFields_() {
   }
 }
 
+function getAgencySortKey_(sortKey) {
+  const fields = getAgencyMetricFields_();
+
+  switch (sortKey) {
+    case 'current': return fields.current;
+    case 'prior': return fields.prior;
+    case 'earlier': return fields.earlier;
+    default: return sortKey;
+  }
+}
+
 function renderAgencyLeaderboard() {
   const table = document.getElementById('agenciesTable');
   const headers = table.querySelectorAll('thead th');
   const tableBody = table.querySelector('tbody');
   const rows = [...globalQueryAgencyRows].sort((a, b) => {
-    const aValue = a[agencySort.key];
-    const bValue = b[agencySort.key];
+    const sortKey = getAgencySortKey_(agencySort.key);
+
+    let aValue;
+    let bValue;
+
+    if (agencySort.key === 'change') {
+      const fields = getAgencyMetricFields_();
+
+      const aEarlier = Number(a[fields.earlier]) || 0;
+      const aPrior = Number(a[fields.prior]) || 0;
+      const bEarlier = Number(b[fields.earlier]) || 0;
+      const bPrior = Number(b[fields.prior]) || 0;
+
+      aValue = aEarlier > 0 ? (aPrior - aEarlier) / aEarlier : null;
+      bValue = bEarlier > 0 ? (bPrior - bEarlier) / bEarlier : null;
+    } else {
+      aValue = a[sortKey];
+      bValue = b[sortKey];
+    }
 
     if (typeof aValue === 'string' || typeof bValue === 'string') {
       const result = String(aValue || '').localeCompare(String(bValue || ''));
@@ -114,6 +142,16 @@ function renderAgencyLeaderboard() {
   headers[3].textContent = analysisYear ? analysisYear - 1 : 'Prior';
   headers[4].textContent = analysisYear ? analysisYear - 2 : 'Earlier';
   headers[5].textContent = 'Change';
+
+  headers.forEach(header => {
+    header.classList.remove('sort-asc', 'sort-desc');
+
+    if (header.dataset.sort === agencySort.key) {
+      header.classList.add(
+        agencySort.direction === 'asc' ? 'sort-asc' : 'sort-desc'
+      );
+    }
+  });
 
   const fields = getAgencyMetricFields_();
 
@@ -186,9 +224,23 @@ function bindAgencyLeaderboardControls_() {
       const fields = getAgencyMetricFields_();
 
       agencySort = {
-        key: fields.current,
+        key: 'current',
         direction: 'desc'
       };
+
+      renderAgencyLeaderboard();
+    });
+  });
+  document.querySelectorAll('#agenciesTable th[data-sort]').forEach(header => {
+    header.addEventListener('click', () => {
+      const key = header.dataset.sort;
+
+      if (agencySort.key === key) {
+        agencySort.direction = agencySort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        agencySort.key = key;
+        agencySort.direction = key === 'display_name' ? 'asc' : 'desc';
+      }
 
       renderAgencyLeaderboard();
     });
