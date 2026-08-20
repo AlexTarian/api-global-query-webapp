@@ -356,6 +356,25 @@
   padding-bottom: 5px;
 }
 
+#agenciesTable th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+#agenciesTable th.sortable:hover {
+  text-decoration: underline;
+}
+
+#agenciesTable th.sort-asc::after {
+  content: ' ▲';
+  font-size: 0.7em;
+}
+
+#agenciesTable th.sort-desc::after {
+  content: ' ▼';
+  font-size: 0.7em;
+}
+
 /* Agency column takes all remaining space. */
 #agenciesTable th:first-child,
 #agenciesTable td:first-child {
