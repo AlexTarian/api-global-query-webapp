@@ -1,11 +1,29 @@
 let globalQueryAgenciesLoaded = false;
 let globalQueryAgencyRows = [];
+let selectedAgencyId = null;
+let globalQueryAgencyProfiles = new Map();
 let agencyMetricMode = 'cases';
 let agencyControlsBound = false;
 let agencySort = {
   key: 'current',
   direction: 'desc'
 };
+
+async function loadAgencyProfiles_() {
+  const { data, error } = await window.globalQuerySupabase
+    .from('agencies')
+    .select(`
+      agency_id,
+      normalized_name,
+      display_name
+    `);
+
+  if (error) throw error;
+
+  globalQueryAgencyProfiles = new Map(
+    (data || []).map(row => [String(row.agency_id), row])
+  );
+}
 
 async function loadGlobalQueryAgencies() {
   if (!agencyControlsBound) {
@@ -53,6 +71,7 @@ async function loadGlobalQueryAgencies() {
     if (error) throw error;
 
     globalQueryAgencyRows = Array.isArray(data) ? data : [];
+    await loadAgencyProfiles_();
     populateAgencyJumpOptions_();
     globalQueryAgenciesLoaded = true;
     renderAgencyLeaderboard();
@@ -268,8 +287,6 @@ function bindAgencyLeaderboardControls_() {
   document.querySelectorAll('input[name="agencyMetric"]').forEach(input => {
     input.addEventListener('change', event => {
       agencyMetricMode = event.target.value;
-
-      const fields = getAgencyMetricFields_();
 
       agencySort = {
         key: 'current',
