@@ -265,7 +265,7 @@ function renderAgencyLeaderboard() {
     const displayName = row.display_name || row.normalized_name || '—';
 
     return `
-      <tr data-agency-id="${row.agency_id}">
+      <tr data-agency-id="${row.agency_id}" class="${String(row.agency_id) === String(selectedAgencyId) ? 'selected-agency' : ''}">
         <td class="ellipsis agency-column" title="${GlobalQueryUI.escapeHtml_(displayName)}">${GlobalQueryUI.escapeHtml_(displayName)}</td>
         <td class="center">${currentValue.toLocaleString()}</td>
         <td class="center" title="${GlobalQueryUI.escapeHtml_(churnTooltip)}"><span class="${churnClass}"><strong>${churnText}</strong></span></td>
