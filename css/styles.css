@@ -473,6 +473,21 @@
   white-space: nowrap;
 }
 
+#agenciesTable tbody tr[data-agency-id] {
+  cursor: pointer;
+}
+
+#agenciesTable tbody tr[data-agency-id]:hover {
+  background: var(--surface-alt);
+}
+
+#agenciesTable tbody tr.selected-agency {
+  background: var(--primary-soft);
+}
+
+#agenciesTable tbody tr.selected-agency:hover {
+  background: var(--primary-soft);
+}
 
 .agency-worker-count {
   display: block;
