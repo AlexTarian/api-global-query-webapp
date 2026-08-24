@@ -400,11 +400,6 @@ function renderAgencyDetail_(leaderboardRow) {
           <span class="muted">Email</span>
           <strong>${GlobalQueryUI.escapeHtml_(profile.email || '—')}</strong>
         </div>
-
-        <div class="agency-detail-row">
-          <span class="muted">Website</span>
-          <strong>${GlobalQueryUI.escapeHtml_(profile.website || '—')}</strong>
-        </div>
       </div>
 
       <div class="agency-performance-section">
