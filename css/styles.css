@@ -386,6 +386,64 @@
   margin-left: auto;
 }
 
+.agency-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.6fr);
+  gap: 20px;
+}
+
+.agency-profile-section,
+.agency-performance-section {
+  min-width: 0;
+}
+
+.agency-detail-row {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.agency-detail-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.agency-year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.agency-year-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+}
+
+.agency-year-card strong {
+  font-size: 1.15rem;
+}
+
+.agency-summary-metrics {
+  margin-top: 12px;
+}
+
+@media (max-width: 800px) {
+  .agency-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agency-year-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 #agencyJumpSearch {
   width: 220px;
   padding: 8px 12px;
