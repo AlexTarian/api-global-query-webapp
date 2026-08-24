@@ -335,9 +335,37 @@
   }
 
 .agency-table-wrap {
-  height: 520px;
+  height: 420px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.agency-detail-card {
+  margin-top: 16px;
+}
+
+.agency-detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.agency-detail-metric {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+}
+
+.agency-detail-metric span,
+.agency-detail-metric strong {
+  display: block;
+}
+
+.agency-detail-metric strong {
+  margin-top: 4px;
+  font-size: 1.35rem;
 }
 
 .agency-leaderboard-controls {
