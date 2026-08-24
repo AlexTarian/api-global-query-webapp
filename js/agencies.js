@@ -130,6 +130,8 @@ function jumpToAgency_(searchValue) {
 
   if (!agency) return;
 
+  selectAgency_(agency.agency_id);
+
   const row = document.querySelector(
     `#agenciesTable tbody tr[data-agency-id="${agency.agency_id}"]`
   );
@@ -151,6 +153,22 @@ function jumpToAgency_(searchValue) {
   setTimeout(() => {
     row.classList.remove('agency-jump-highlight');
   }, 1800);
+}
+
+function selectAgency_(agencyId) {
+  const id = String(agencyId || '');
+  if (!id) return;
+
+  const leaderboardRow = globalQueryAgencyRows.find(
+    row => String(row.agency_id) === id
+  );
+
+  if (!leaderboardRow) return;
+
+  selectedAgencyId = id;
+
+  renderAgencyLeaderboard();
+  renderAgencyDetail_(leaderboardRow);
 }
 
 function getAgencySortKey_(sortKey) {
@@ -203,6 +221,13 @@ function renderAgencyLeaderboard() {
     return;
   }
 
+  if (
+    !selectedAgencyId ||
+    !rows.some(row => String(row.agency_id) === String(selectedAgencyId))
+  ) {
+    selectedAgencyId = String(rows[0].agency_id);
+  }
+
   const analysisYear = Number(rows[0].analysis_year) || 0;
   headers[1].textContent = analysisYear || 'Current';
   headers[2].textContent = 'Chrn';
@@ -223,6 +248,13 @@ function renderAgencyLeaderboard() {
   const fields = getAgencyMetricFields_();
 
   tableBody.innerHTML = rows.map(row => {
+    const selectedRow = rows.find(
+      row => String(row.agency_id) === String(selectedAgencyId)
+    );
+
+    if (selectedRow) {
+      renderAgencyDetail_(selectedRow);
+    }
     const currentValue = Number(row[fields.current]) || 0;
     const priorValue = Number(row[fields.prior]) || 0;
     const earlierValue = Number(row[fields.earlier]) || 0;
@@ -277,6 +309,53 @@ function renderAgencyLeaderboard() {
   }).join('');
 }
 
+function renderAgencyDetail_(leaderboardRow) {
+  const nameElement = document.getElementById('agencyDetailName');
+  const content = document.getElementById('agencyDetailContent');
+
+  if (!nameElement || !content) return;
+
+  if (!leaderboardRow) {
+    nameElement.textContent = '—';
+    content.innerHTML =
+      '<div class="muted">Select an agency to view its details.</div>';
+    return;
+  }
+
+  const profile = globalQueryAgencyProfiles.get(
+    String(leaderboardRow.agency_id)
+  ) || {};
+
+  const displayName =
+    profile.display_name ||
+    leaderboardRow.display_name ||
+    leaderboardRow.normalized_name ||
+    '—';
+
+  const year = Number(leaderboardRow.analysis_year) || 0;
+
+  nameElement.textContent = displayName;
+
+  content.innerHTML = `
+    <div class="agency-detail-metrics">
+      <div class="agency-detail-metric">
+        <span class="muted">${year || 'Current'} Cases</span>
+        <strong>${(Number(leaderboardRow.current_count) || 0).toLocaleString()}</strong>
+      </div>
+
+      <div class="agency-detail-metric">
+        <span class="muted">${year || 'Current'} Employers</span>
+        <strong>${(Number(leaderboardRow.current_employers) || 0).toLocaleString()}</strong>
+      </div>
+
+      <div class="agency-detail-metric">
+        <span class="muted">${year || 'Current'} Workers</span>
+        <strong>${(Number(leaderboardRow.current_workers) || 0).toLocaleString()}</strong>
+      </div>
+    </div>
+  `;
+}
+
 function refreshGlobalQueryAgencies() {
   globalQueryAgenciesLoaded = false;
   globalQueryAgencyRows = [];
@@ -309,6 +388,12 @@ function bindAgencyLeaderboardControls_() {
 
       renderAgencyLeaderboard();
     });
+  });
+  document.querySelector('#agenciesTable tbody').addEventListener('click', event => {
+    const row = event.target.closest('tr[data-agency-id]');
+    if (!row) return;
+
+    selectAgency_(row.dataset.agencyId);
   });
   const agencySearch = document.getElementById('agencyJumpSearch');
 
