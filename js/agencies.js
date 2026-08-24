@@ -14,8 +14,15 @@ async function loadAgencyProfiles_() {
     .from('agencies')
     .select(`
       agency_id,
+      agent_fein,
       normalized_name,
-      display_name
+      display_name,
+      contact_first_name,
+      contact_last_name,
+      address,
+      state,
+      phone,
+      email
     `);
 
   if (error) throw error;
@@ -332,26 +339,108 @@ function renderAgencyDetail_(leaderboardRow) {
     leaderboardRow.normalized_name ||
     '—';
 
+  const contactName = [
+    profile.contact_first_name,
+    profile.contact_last_name
+  ].filter(Boolean).join(' ');
+
   const year = Number(leaderboardRow.analysis_year) || 0;
+
+  const currentCases = Number(leaderboardRow.current_count) || 0;
+  const currentEmployers = Number(leaderboardRow.current_employers) || 0;
+  const currentWorkers = Number(leaderboardRow.current_workers) || 0;
+
+  const priorCases = Number(leaderboardRow.prior_count) || 0;
+  const priorEmployers = Number(leaderboardRow.prior_employers) || 0;
+  const priorWorkers = Number(leaderboardRow.prior_workers) || 0;
+
+  const earlierCases = Number(leaderboardRow.earlier_count) || 0;
+  const earlierEmployers = Number(leaderboardRow.earlier_employers) || 0;
+  const earlierWorkers = Number(leaderboardRow.earlier_workers) || 0;
+
+  const churnRate =
+    leaderboardRow.churn_rate === null ||
+    leaderboardRow.churn_rate === undefined ||
+    leaderboardRow.churn_rate === ''
+      ? null
+      : Number(leaderboardRow.churn_rate);
+
+  const churnText =
+    churnRate !== null && Number.isFinite(churnRate)
+      ? `${(churnRate * 100).toFixed(1)}%`
+      : '—';
 
   nameElement.textContent = displayName;
 
   content.innerHTML = `
-    <div class="agency-detail-metrics">
-      <div class="agency-detail-metric">
-        <span class="muted">${year || 'Current'} Cases</span>
-        <strong>${(Number(leaderboardRow.current_count) || 0).toLocaleString()}</strong>
+    <div class="agency-detail-grid">
+
+      <div class="agency-profile-section">
+        <div class="agency-detail-row">
+          <span class="muted">Contact</span>
+          <strong>${GlobalQueryUI.escapeHtml_(contactName || '—')}</strong>
+        </div>
+
+        <div class="agency-detail-row">
+          <span class="muted">FEIN</span>
+          <strong>${GlobalQueryUI.escapeHtml_(profile.agent_fein || '—')}</strong>
+        </div>
+
+        <div class="agency-detail-row">
+          <span class="muted">Address</span>
+          <strong>${GlobalQueryUI.escapeHtml_(profile.address || '—')}</strong>
+        </div>
+
+        <div class="agency-detail-row">
+          <span class="muted">Phone</span>
+          <strong>${GlobalQueryUI.escapeHtml_(profile.phone || '—')}</strong>
+        </div>
+
+        <div class="agency-detail-row">
+          <span class="muted">Email</span>
+          <strong>${GlobalQueryUI.escapeHtml_(profile.email || '—')}</strong>
+        </div>
+
+        <div class="agency-detail-row">
+          <span class="muted">Website</span>
+          <strong>${GlobalQueryUI.escapeHtml_(profile.website || '—')}</strong>
+        </div>
       </div>
 
-      <div class="agency-detail-metric">
-        <span class="muted">${year || 'Current'} Employers</span>
-        <strong>${(Number(leaderboardRow.current_employers) || 0).toLocaleString()}</strong>
+      <div class="agency-performance-section">
+        <div class="agency-year-grid">
+
+          <div class="agency-year-card">
+            <span class="muted">${year || 'Current'}</span>
+            <strong>${currentCases.toLocaleString()} cases</strong>
+            <span>${currentEmployers.toLocaleString()} employers</span>
+            <span>${currentWorkers.toLocaleString()} workers</span>
+          </div>
+
+          <div class="agency-year-card">
+            <span class="muted">${year ? year - 1 : 'Prior'}</span>
+            <strong>${priorCases.toLocaleString()} cases</strong>
+            <span>${priorEmployers.toLocaleString()} employers</span>
+            <span>${priorWorkers.toLocaleString()} workers</span>
+          </div>
+
+          <div class="agency-year-card">
+            <span class="muted">${year ? year - 2 : 'Earlier'}</span>
+            <strong>${earlierCases.toLocaleString()} cases</strong>
+            <span>${earlierEmployers.toLocaleString()} employers</span>
+            <span>${earlierWorkers.toLocaleString()} workers</span>
+          </div>
+
+        </div>
+
+        <div class="agency-summary-metrics">
+          <div class="agency-detail-metric">
+            <span class="muted">Employer Churn</span>
+            <strong>${churnText}</strong>
+          </div>
+        </div>
       </div>
 
-      <div class="agency-detail-metric">
-        <span class="muted">${year || 'Current'} Workers</span>
-        <strong>${(Number(leaderboardRow.current_workers) || 0).toLocaleString()}</strong>
-      </div>
     </div>
   `;
 }
