@@ -142,16 +142,14 @@ async function openEmployerDetail_(fein) {
         'Email',
         GlobalQueryUI.escapeHtml_(employer.contact_email || '—')
       ],
-      [
-        'Cases',
-        (Number(employer.total_cases) || 0).toLocaleString()
-      ],
-      [
-        'Workers',
-        (Number(employer.total_workers) || 0).toLocaleString()
-      ]
     ]
   );
+
+  document.getElementById('modalEmployerCases').textContent =
+    (Number(employer.total_cases) || 0).toLocaleString();
+
+  document.getElementById('modalEmployerWorkers').textContent =
+    (Number(employer.total_workers) || 0).toLocaleString();
 
   historyContainer.innerHTML =
     '<div class="muted">Loading filing history...</div>';
