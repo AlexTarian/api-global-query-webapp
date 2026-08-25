@@ -146,7 +146,7 @@ async function openEmployerDetail_(fein) {
   );
 
   document.getElementById('modalEmployerCases').textContent =
-    (Number(employer.total_cases) || 0).toLocaleString() + ' Cases';
+    ' ' + (Number(employer.total_cases) || 0).toLocaleString() + ' Cases';
 
   historyContainer.innerHTML =
     '<div class="muted">Loading filing history...</div>';
