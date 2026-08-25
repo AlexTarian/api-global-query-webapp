@@ -214,7 +214,7 @@ function renderEmployerHistory_(history) {
         </div>
 
         <div class="employer-history-meta">
-          <span>${(Number(row.h2a_workers) || 0).toLocaleString()} workers</span>
+          <span>Workers: ${(Number(row.h2a_workers) || 0).toLocaleString()}</span>
           <span>${GlobalQueryUI.escapeHtml_(agencyNames || '—')}</span>
         </div>
       </button>
