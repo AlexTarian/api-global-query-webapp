@@ -112,21 +112,18 @@ async function openEmployerDetail_(fein) {
   document.getElementById('detailModalTitle').textContent =
     employer.employer_name || 'Employer';
 
-  document.getElementById('detailModalEmployer').textContent =
-    employer.fein || '—';
-
   GlobalQueryUI.appendKv(
     document.getElementById('modalEmployerInfo'),
     [
+      [
+        'FEIN',
+        GlobalQueryUI.escapeHtml_(employer.fein || '—')
+      ],
       [
         'Address',
         GlobalQueryUI.escapeHtml_(
           cleanGlobalQueryText_(employer.employer_address) || '—'
         )
-      ],
-      [
-        'FEIN',
-        GlobalQueryUI.escapeHtml_(employer.fein || '—')
       ],
       [
         'Contact',
@@ -214,13 +211,6 @@ function renderEmployerHistory_(history) {
           ${GlobalQueryUI.formatDate(row.start_date)}
           –
           ${GlobalQueryUI.formatDate(row.end_date)}
-        </div>
-
-        <div
-          class="employer-history-job ellipsis"
-          title="${GlobalQueryUI.escapeHtml_(jobType)}"
-        >
-          ${GlobalQueryUI.escapeHtml_(jobType)}
         </div>
 
         <div class="employer-history-meta">
