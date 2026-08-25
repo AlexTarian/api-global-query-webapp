@@ -161,7 +161,13 @@ function renderCases(rows = cases) {
   body.innerHTML = rows.map(row => `
     <tr class="clickable" data-case="${GlobalQueryUI.escapeHtml_(row.caseNum)}">
       <td>${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
-      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}">${GlobalQueryUI.escapeHtml_(row.employer || '—')}</td>
+      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}"> ${row.fein 
+        ? `<button type="button" class="case-employer-link" data-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}" title="View employer details" >
+          ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
+          </button>`
+        : GlobalQueryUI.escapeHtml_(row.employer || '—')
+        }
+      </td>
       <td>${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}</td>
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.displayAgency || row.agency || '')}">${GlobalQueryUI.escapeHtml_(row.displayAgency || row.agency || '—')}</td>
     </tr>
@@ -280,7 +286,17 @@ function openCaseModal(caseRow, mode = 'case') {
   churnBanner.className = 'churn-banner hidden';
   churnBanner.innerHTML = '';
   document.getElementById('detailModalTitle').textContent = caseRow.caseNum || 'Case';
-  document.getElementById('detailModalEmployer').textContent = caseRow.employer || '—';
+  const employerSubtitle = document.getElementById('detailModalEmployer');
+
+  if (mode === 'case' && caseRow.fein) {
+    employerSubtitle.innerHTML = `
+      <button type="button" class="modal-employer-link" data-employer-fein="${GlobalQueryUI.escapeHtml_(caseRow.fein)}" title="View employer details">
+        ${GlobalQueryUI.escapeHtml_(caseRow.employer || '—')}
+      </button>
+    `;
+  } else {
+    employerSubtitle.textContent = caseRow.employer || '—';
+  }
 
   if (mode === 'case') {
     GlobalQueryUI.appendKv(document.getElementById('modalBusinessInfo'), [
@@ -611,10 +627,35 @@ function bindCaseEvents_() {
   document.getElementById('caseLimit').addEventListener('change', applyCaseFilters);
 
   document.querySelector('#casesTable tbody').addEventListener('click', event => {
+    const employerLink = event.target.closest('[data-employer-fein]');
+
+    if (employerLink) {
+      event.stopPropagation();
+
+      if (typeof window.openEmployerDetail === 'function') {
+        window.openEmployerDetail(employerLink.dataset.employerFein);
+      }
+
+      return;
+    }
+
     const row = event.target.closest('tr[data-case]');
     if (!row) return;
-    openCaseModal(cases.find(item => item.caseNum === row.dataset.case));
+
+    openCaseModal(
+      cases.find(item => item.caseNum === row.dataset.case)
+    );
   });
+
+  document.getElementById('detailModalEmployer')
+    .addEventListener('click', event => {
+      const employerLink = event.target.closest('[data-employer-fein]');
+      if (!employerLink) return;
+
+      if (typeof window.openEmployerDetail === 'function') {
+        window.openEmployerDetail(employerLink.dataset.employerFein);
+      }
+   });
 
   document.getElementById('closeModalBtn').addEventListener('click', closeCaseModal_);
   document.getElementById('detailModalOverlay').addEventListener('click', event => { if (event.target.id === 'detailModalOverlay') closeCaseModal_(); });
