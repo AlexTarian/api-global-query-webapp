@@ -832,7 +832,8 @@
   }
 
   #modalBusinessInfo,
-  #modalJobInfo {
+  #modalJobInfo,
+  #modalEmployerInfo  {
     display: grid;
     grid-template-columns: 120px minmax(0, 1fr);
     gap: 8px 14px;
