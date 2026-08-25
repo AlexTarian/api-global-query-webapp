@@ -334,6 +334,39 @@
     width: 26%;
   }
 
+.case-employer-link,
+.modal-employer-link {
+  display: inline;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.case-employer-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-employer-link:hover,
+.modal-employer-link:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+.case-employer-link:focus-visible,
+.modal-employer-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 .employer-history-section {
   margin-top: 20px;
 }
