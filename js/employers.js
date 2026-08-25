@@ -96,11 +96,46 @@ async function loadEmployerCaseHistory_(fein) {
   return data || [];
 }
 
+async function getEmployerByFein_(fein) {
+  const existing = employers.find(row => row.fein === fein);
+  if (existing) return existing;
+
+  const { data, error } = await window.globalQuerySupabase
+    .from('employer_directory')
+    .select(`
+      fein,
+      employer_name,
+      employer_address,
+      employer_state,
+      contact_name,
+      contact_phone,
+      contact_email,
+      total_cases,
+      total_workers,
+      latest_start_date
+    `)
+    .eq('fein', fein)
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
 async function openEmployerDetail_(fein) {
-  const employer = employers.find(row => row.fein === fein);
+  if (!fein) return;
+
+  let employer;
+
+  try {
+    employer = await getEmployerByFein_(fein);
+  } catch (error) {
+    console.error('Could not load employer:', error);
+    return;
+  }
 
   if (!employer) {
-    console.warn('Employer not found in current results:', fein);
+    console.warn('Employer not found:', fein);
     return;
   }
 
@@ -356,3 +391,4 @@ function bindEmployerEvents_() {
 }
 
 window.initializeEmployers = initializeEmployers;
+window.openEmployerDetail = openEmployerDetail_;
