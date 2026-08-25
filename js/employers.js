@@ -117,7 +117,7 @@ async function initializeEmployers() {
   if (employersInitialized) return;
   employersInitialized = true;
 
-  // GlobalQueryUI.populateStateDropdown('filterEmployerState');
+  GlobalQueryUI.populateStateDropdown('filterEmployerState');
   bindEmployerEvents_();
   await applyEmployerFilters_();
 }
@@ -201,3 +201,5 @@ function bindEmployerEvents_() {
       openEmployerDetail_(row.dataset.fein);
     });
 }
+
+window.initializeEmployers = initializeEmployers;
