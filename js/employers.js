@@ -104,11 +104,149 @@ async function openEmployerDetail_(fein) {
     return;
   }
 
-  console.log('Selected employer:', employer);
+  const modal = document.getElementById('detailModalOverlay');
+  const historyContainer = document.getElementById('modalEmployerHistory');
 
-  const history = await loadEmployerCaseHistory_(fein);
+  setCaseModalMode_('employer');
 
-  console.log('Employer filing history:', history);
+  document.getElementById('detailModalTitle').textContent =
+    employer.employer_name || 'Employer';
+
+  document.getElementById('detailModalEmployer').textContent =
+    employer.fein || '—';
+
+  GlobalQueryUI.appendKv(
+    document.getElementById('modalEmployerInfo'),
+    [
+      [
+        'Address',
+        GlobalQueryUI.escapeHtml_(
+          cleanGlobalQueryText_(employer.employer_address) || '—'
+        )
+      ],
+      [
+        'FEIN',
+        GlobalQueryUI.escapeHtml_(employer.fein || '—')
+      ],
+      [
+        'Contact',
+        GlobalQueryUI.escapeHtml_(
+          cleanGlobalQueryText_(employer.contact_name) || '—'
+        )
+      ],
+      [
+        'Phone',
+        GlobalQueryUI.escapeHtml_(employer.contact_phone || '—')
+      ],
+      [
+        'Email',
+        GlobalQueryUI.escapeHtml_(employer.contact_email || '—')
+      ],
+      [
+        'Cases',
+        (Number(employer.total_cases) || 0).toLocaleString()
+      ],
+      [
+        'Workers',
+        (Number(employer.total_workers) || 0).toLocaleString()
+      ]
+    ]
+  );
+
+  historyContainer.innerHTML =
+    '<div class="muted">Loading filing history...</div>';
+
+  modal.classList.remove('hidden');
+
+  try {
+    const history = await loadEmployerCaseHistory_(fein);
+    renderEmployerHistory_(history);
+  } catch (error) {
+    console.error('Could not load employer filing history:', error);
+
+    historyContainer.innerHTML = `
+      <div class="error-cell">
+        ${GlobalQueryUI.escapeHtml_(
+          GlobalQueryUI.getErrorMessage_(error)
+        )}
+      </div>
+    `;
+  }
+}
+
+function renderEmployerHistory_(history) {
+  const container = document.getElementById('modalEmployerHistory');
+
+  if (!history.length) {
+    container.innerHTML =
+      '<div class="muted">No filing history was found for this employer.</div>';
+    return;
+  }
+
+  container.innerHTML = history.map(row => {
+    const agencyRows = Array.isArray(row.case_agencies)
+      ? row.case_agencies
+      : [];
+
+    const agencies = agencyRows
+      .map(item => item?.agencies)
+      .filter(Boolean);
+
+    const agencyNames = agencies
+      .map(item => item.display_name || item.normalized_name)
+      .filter(Boolean)
+      .join(' | ');
+
+    const jobType = row.soc_code && row.job_title
+      ? `${row.soc_code}: ${row.job_title}`
+      : row.soc_code || row.job_title || '—';
+
+    return `
+      <button
+        type="button"
+        class="employer-history-tile"
+        data-case="${GlobalQueryUI.escapeHtml_(row.case_num || '')}"
+      >
+        <div class="employer-history-header">
+          <strong>${GlobalQueryUI.escapeHtml_(row.case_num || '—')}</strong>
+          <span>${GlobalQueryUI.escapeHtml_(row.case_status || '—')}</span>
+        </div>
+
+        <div class="employer-history-period">
+          ${GlobalQueryUI.formatDate(row.start_date)}
+          –
+          ${GlobalQueryUI.formatDate(row.end_date)}
+        </div>
+
+        <div
+          class="employer-history-job ellipsis"
+          title="${GlobalQueryUI.escapeHtml_(jobType)}"
+        >
+          ${GlobalQueryUI.escapeHtml_(jobType)}
+        </div>
+
+        <div class="employer-history-meta">
+          <span>${(Number(row.h2a_workers) || 0).toLocaleString()} workers</span>
+          <span>${GlobalQueryUI.escapeHtml_(agencyNames || '—')}</span>
+        </div>
+      </button>
+    `;
+  }).join('');
+}
+
+async function openEmployerHistoryCase_(caseNum) {
+  if (!caseNum) return;
+
+  const { data, error } = await window.globalQuerySupabase
+    .from('cases_with_occupation')
+    .select(caseSelect_(false))
+    .eq('case_num', caseNum)
+    .single();
+
+  if (error) throw error;
+  if (!data) return;
+
+  openCaseModal(mapCaseRow_(data), 'case');
 }
 
 function setEmployersLoading_(loading) {
@@ -214,6 +352,18 @@ function bindEmployerEvents_() {
       if (!row) return;
 
       openEmployerDetail_(row.dataset.fein);
+    });
+
+  document.getElementById('modalEmployerHistory')
+    .addEventListener('click', async event => {
+      const tile = event.target.closest('[data-case]');
+      if (!tile) return;
+
+      try {
+        await openEmployerHistoryCase_(tile.dataset.case);
+      } catch (error) {
+        console.error('Could not open employer case:', error);
+      }
     });
 }
 
