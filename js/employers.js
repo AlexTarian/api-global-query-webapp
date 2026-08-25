@@ -112,6 +112,9 @@ async function openEmployerDetail_(fein) {
   document.getElementById('detailModalTitle').textContent =
     employer.employer_name || 'Employer';
 
+  document.getElementById('detailModalEmployer').textContent =
+    cleanGlobalQueryText_(employer.contact_name) || '—';
+
   GlobalQueryUI.appendKv(
     document.getElementById('modalEmployerInfo'),
     [
