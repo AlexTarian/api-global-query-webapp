@@ -254,10 +254,15 @@ async function loadStatusDropdown() {
 }
 
 function setCaseModalMode_(mode) {
+  const isCase = mode === 'case';
   const isChurn = mode === 'churn';
-  document.getElementById('modalBusinessJobSection')?.classList.toggle('hidden', isChurn);
-  document.getElementById('modalJobDescriptionSection')?.classList.toggle('hidden', isChurn);
-  document.getElementById('modalActionRow')?.classList.toggle('hidden', isChurn);
+  const isEmployer = mode === 'employer';
+
+  document.getElementById('modalBusinessJobSection')?.classList.toggle('hidden', !isCase);
+  document.getElementById('modalJobDescriptionSection')?.classList.toggle('hidden', !isCase);
+  document.getElementById('modalActionRow')?.classList.toggle('hidden', !isCase);
+  document.getElementById('modalChurnInfoPanel')?.classList.toggle('hidden', !isChurn);
+  document.getElementById('modalEmployerPanel')?.classList.toggle('hidden', !isEmployer);
 }
 
 function openCaseModal(caseRow, mode = 'case') {
