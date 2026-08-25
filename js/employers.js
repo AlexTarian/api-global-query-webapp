@@ -117,7 +117,7 @@ async function initializeEmployers() {
   if (employersInitialized) return;
   employersInitialized = true;
 
-  GlobalQueryUI.populateStateDropdown('filterEmployerState');
+  // GlobalQueryUI.populateStateDropdown('filterEmployerState');
   bindEmployerEvents_();
   await applyEmployerFilters_();
 }
