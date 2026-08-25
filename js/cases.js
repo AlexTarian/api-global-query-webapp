@@ -320,7 +320,7 @@ function openCaseModal(caseRow, mode = 'case') {
           ${caseRow.socCode ? `${GlobalQueryUI.escapeHtml_(caseRow.socCode)}: ` : ''}${GlobalQueryUI.escapeHtml_(caseRow.jobType || '—')}
         </span>
       `],
-      ['NAICS Code', GlobalQueryUI.escapeHtml_(caseRow.naicsCode ?? '—')],
+      ['NAICS Code', GlobalQueryUI.escapeHtml_(caseRow.naicsCode || '—')],
       ['Period of Need', `${GlobalQueryUI.formatDate(caseRow.start)} – ${GlobalQueryUI.formatDate(caseRow.end)}`],
       ['Workers', GlobalQueryUI.escapeHtml_(caseRow.workers ?? '—')],
       ['H-2ALC', GlobalQueryUI.formatBoolean_(caseRow.h2alc)],
