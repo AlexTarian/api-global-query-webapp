@@ -96,6 +96,7 @@
 
         <nav class="tabs" aria-label="GlobalQuery sections">
           <button class="tab-btn active" data-tab="casesTab">Cases</button>
+          <button class="tab-btn" data-tab="employersTab">Employers</button>
           <button class="tab-btn" data-tab="agenciesTab">Agencies</button>
           <button class="tab-btn" data-tab="churnTab">Churn</button>
         </nav>
@@ -195,6 +196,68 @@
           </div>
         </section>
 
+        <!-- ==================== EMPLOYERS ==================== -->
+
+        <section id="employersTab" class="tab-panel">
+          <div class="section">
+            <div class="section-header">
+              <div>
+                <h2>Employers</h2>
+                <p>Search employers and review filing history.</p>
+              </div>
+            </div>
+
+            <div class="filters-grid">
+              <div class="field">
+                <label for="filterEmployerName">Employer</label>
+                <input id="filterEmployerName" class="input" type="text" placeholder="Search employer...">
+              </div>
+
+              <div class="field">
+                <label for="filterEmployerFein">FEIN</label>
+                <input id="filterEmployerFein" class="input" type="text" placeholder="##-#######">
+              </div>
+
+              <div class="field">
+                <label for="filterEmployerState">State</label>
+                <select id="filterEmployerState" class="select">
+                  <option value="">All States</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="employerLimit">Rows</label>
+                <select id="employerLimit" class="select">
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <button id="applyEmployerFiltersBtn" class="btn primary">⌕ Search</button>
+              <button id="clearEmployerFiltersBtn" class="btn">Clear</button>
+              <span id="employerRowCountLabel" class="muted"></span>
+            </div>
+
+            <div class="table-wrap">
+              <table id="employersTable">
+                <thead>
+                  <tr>
+                    <th>Employer</th>
+                    <th>State</th>
+                    <th>FEIN</th>
+                    <th>Cases</th>
+                    <th>Latest Filing</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        
         <!-- ==================== AGENCIES ==================== -->
 
         <section id="agenciesTab" class="tab-panel">
