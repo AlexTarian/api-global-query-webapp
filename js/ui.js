@@ -53,11 +53,12 @@ function appendKv(container, pairs) {
   container.innerHTML = pairs.map(([key, value]) => `<div class="k">${escapeHtml_(key)}</div><div class="v">${value ?? '—'}</div>`).join('');
 }
 
-function populateStateDropdown() {
-  const select = document.getElementById('filterState');
+function populateStateDropdown(selectId = 'filterState') {
+  const select = document.getElementById(selectId);
   if (!select) return;
 
   select.innerHTML = '';
+
   STATES.forEach(state => {
     const option = document.createElement('option');
     option.value = state.code;
@@ -71,17 +72,33 @@ function initializeTabs() {
     button.addEventListener('click', () => {
       const targetId = button.dataset.tab;
 
-      document.querySelectorAll('.tab-btn').forEach(item => item.classList.toggle('active', item === button));
-      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === targetId));
+      document.querySelectorAll('.tab-btn').forEach(item => {
+        item.classList.toggle('active', item === button);
+      });
 
-      if (targetId === 'agenciesTab' && typeof window.loadGlobalQueryAgencies === 'function') window.loadGlobalQueryAgencies();
-      if (targetId === 'churnTab') {
-        console.log('Churn tab clicked');
-        console.log('loadGlobalQueryChurn:', typeof window.loadGlobalQueryChurn);
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === targetId);
+      });
 
-        if (typeof window.loadGlobalQueryChurn === 'function') {
-          window.loadGlobalQueryChurn();
-        }
+      if (
+        targetId === 'employersTab' &&
+        typeof window.initializeEmployers === 'function'
+      ) {
+        window.initializeEmployers();
+      }
+
+      if (
+        targetId === 'agenciesTab' &&
+        typeof window.loadGlobalQueryAgencies === 'function'
+      ) {
+        window.loadGlobalQueryAgencies();
+      }
+
+      if (
+        targetId === 'churnTab' &&
+        typeof window.loadGlobalQueryChurn === 'function'
+      ) {
+        window.loadGlobalQueryChurn();
       }
     });
   });
