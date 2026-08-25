@@ -96,6 +96,21 @@ async function loadEmployerCaseHistory_(fein) {
   return data || [];
 }
 
+async function openEmployerDetail_(fein) {
+  const employer = employers.find(row => row.fein === fein);
+
+  if (!employer) {
+    console.warn('Employer not found in current results:', fein);
+    return;
+  }
+
+  console.log('Selected employer:', employer);
+
+  const history = await loadEmployerCaseHistory_(fein);
+
+  console.log('Employer filing history:', history);
+}
+
 function setEmployersLoading_(loading) {
   const applyButton = document.getElementById('applyEmployerFiltersBtn');
   const clearButton = document.getElementById('clearEmployerFiltersBtn');
