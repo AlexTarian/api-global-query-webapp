@@ -334,6 +334,65 @@
     width: 26%;
   }
 
+.employer-history-section {
+  margin-top: 20px;
+}
+
+.employer-history {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.employer-history-tile {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.employer-history-tile:hover {
+  border-color: var(--primary);
+  background: var(--surface-raised);
+  transform: translateY(-1px);
+}
+
+.employer-history-header,
+.employer-history-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.employer-history-period,
+.employer-history-job,
+.employer-history-meta {
+  margin-top: 6px;
+}
+
+.employer-history-period,
+.employer-history-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.employer-history-job {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .agency-table-wrap {
   height: 400px;
   overflow-y: auto;
