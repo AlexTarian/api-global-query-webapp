@@ -169,7 +169,7 @@
               <button id="applyFiltersBtn" class="btn primary" type="button">⌕ Search</button>
               <button id="clearFiltersBtn" class="btn" type="button">⟲ Reset</button>
               <button id="downloadCsvButton" class="btn" type="button">⬇ Get CSV</button>
-              <span id="rowCountLabel" class="muted small">Loading cases...</span>
+              <span id="rowCountLabel" class="muted small"></span>
               <span class="spacer"></span>
               <label class="small muted" for="caseLimit">Display</label>
               <select id="caseLimit" class="select" style="width:auto; min-height:38px; padding:7px 32px 7px 10px">
@@ -224,21 +224,17 @@
                   <option value="">All States</option>
                 </select>
               </div>
-
-              <div class="field">
-                <label for="employerLimit">Rows</label>
-                <select id="employerLimit" class="select">
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
-              </div>
             </div>
 
             <div class="toolbar">
-              <button id="applyEmployerFiltersBtn" class="btn primary">⌕ Search</button>
-              <button id="clearEmployerFiltersBtn" class="btn">Clear</button>
-              <span id="employerRowCountLabel" class="muted"></span>
+              <button id="applyEmployerFiltersBtn" class="btn primary" type="button">⌕ Search</button>
+              <button id="clearEmployerFiltersBtn" class="btn" type="button">⟲ Reset</button>
+              <span id="employerRowCountLabel" class="muted small"></span>
+              <span class="spacer"></span>
+              <label class="small muted" for="employerLimit">Display</label>
+              <select id="employerLimit" class="select" style="width:auto; min-height:38px; padding:7px 32px 7px 10px">
+                <option selected>25</option><option>50</option><option>100</option><option>250</option>
+              </select>
             </div>
 
             <div class="table-wrap">
