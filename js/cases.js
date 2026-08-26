@@ -702,14 +702,16 @@ async function initializeCases() {
 
   GlobalQueryUI.populateStateDropdown();
   bindCaseEvents_();
-  
-  await Promise.all([
+
+  applyCaseFilters();
+
+  Promise.all([
     loadAgencyDropdown(),
     loadJobTypeDropdown(),
     loadStatusDropdown()
-  ]);
-  
-  await applyCaseFilters();
+  ]).catch(error => {
+    console.error('Could not finish loading case filters:', error);
+  });
 }
 
 window.initializeCases = initializeCases;
