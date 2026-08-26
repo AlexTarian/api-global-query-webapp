@@ -7,6 +7,7 @@ function getCurrentEmployerFilters_() {
     employer: document.getElementById('filterEmployerName').value.trim(),
     fein: document.getElementById('filterEmployerFein').value.trim(),
     state: document.getElementById('filterEmployerState').value,
+    agency: document.getElementById('filterEmployerAgency').value,
     limit: Number(document.getElementById('employerLimit').value) || 25
   };
 }
@@ -24,7 +25,9 @@ async function searchEmployers_(filters) {
       contact_email,
       total_cases,
       total_workers,
-      latest_start_date
+      latest_start_date,
+      agency_keys,
+      agency_names
     `, { count: 'exact' });
 
   if (filters.employer) {
@@ -37,6 +40,10 @@ async function searchEmployers_(filters) {
 
   if (filters.state) {
     query = query.eq('employer_state', filters.state);
+  }
+
+  if (filters.agency) {
+    query = query.contains('agency_keys', [filters.agency]);
   }
 
   query = query
@@ -294,6 +301,7 @@ async function initializeEmployers() {
   employersInitialized = true;
 
   GlobalQueryUI.populateStateDropdown('filterEmployerState');
+  await loadEmployerAgencyDropdown_();
   bindEmployerEvents_();
   await applyEmployerFilters_();
 }
@@ -339,6 +347,46 @@ async function applyEmployerFilters_() {
   }
 }
 
+async function loadEmployerAgencyDropdown_() {
+  const select = document.getElementById('filterEmployerAgency');
+  if (!select) return;
+
+  try {
+    const { data, error } = await window.globalQuerySupabase
+      .from('agencies')
+      .select(`
+        normalized_name,
+        display_name
+      `)
+      .not('normalized_name', 'is', null)
+      .order('display_name', { ascending: true });
+
+    if (error) throw error;
+
+    select.innerHTML = '<option value="">All Agencies</option>';
+
+    (data || []).forEach(agency => {
+      const key = String(agency.normalized_name || '').trim();
+      const name = String(
+        agency.display_name ||
+        agency.normalized_name ||
+        ''
+      ).trim();
+
+      if (!key || !name) return;
+
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = name;
+
+      select.appendChild(option);
+    });
+
+  } catch (error) {
+    console.error('Could not load employer agency filter:', error);
+  }
+}
+
 function bindEmployerEvents_() {
   document.getElementById('applyEmployerFiltersBtn')
     .addEventListener('click', applyEmployerFilters_);
@@ -358,7 +406,8 @@ function bindEmployerEvents_() {
       [
         'filterEmployerName',
         'filterEmployerFein',
-        'filterEmployerState'
+        'filterEmployerState',
+        'filterEmployerAgency'
       ].forEach(id => {
         document.getElementById(id).value = '';
       });
