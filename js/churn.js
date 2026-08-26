@@ -79,41 +79,76 @@ function mapChurnRow_(row) {
 
 async function fetchAllChurnRows_() {
   const batchSize = 1000;
-  const allRows = [];
-  let from = 0;
 
-  while (true) {
-    const { data, error } = await window.globalQuerySupabase
-      .from('churn')
-      .select(`
-        churn_id,
-        fein,
-        employer_name,
-        series_key,
-        current_case_num,
-        prior_case_num,
-        classification,
-        detected_at,
-        current_agency_key,
-        prior_agency_key,
-        churn_current_agencies(agencies(normalized_name,display_name)),
-        churn_prior_agencies(agencies(normalized_name,display_name))
-      `)
-      .order('detected_at', { ascending: false })
-      .order('churn_id', { ascending: false })
-      .range(from, from + batchSize - 1);
+  const select = `
+    churn_id,
+    fein,
+    employer_name,
+    series_key,
+    current_case_num,
+    prior_case_num,
+    classification,
+    detected_at,
+    current_agency_key,
+    prior_agency_key,
+    churn_current_agencies(agencies(normalized_name,display_name)),
+    churn_prior_agencies(agencies(normalized_name,display_name))
+  `;
 
-    if (error) throw error;
+  const startedAt = performance.now();
 
-    const rows = data || [];
-    allRows.push(...rows);
+  // First batch also tells us how many total rows exist.
+  const {
+    data: firstBatch,
+    error: firstError,
+    count
+  } = await window.globalQuerySupabase
+    .from('churn')
+    .select(select, { count: 'exact' })
+    .order('detected_at', { ascending: false })
+    .order('churn_id', { ascending: false })
+    .range(0, batchSize - 1);
 
-    if (rows.length < batchSize) break;
+  if (firstError) throw firstError;
 
-    from += batchSize;
+  const totalRows = count ?? firstBatch?.length ?? 0;
+
+  if (totalRows <= batchSize) {
+    console.log('Churn load:', {
+      rows: firstBatch?.length || 0,
+      roundTripMs: Math.round(performance.now() - startedAt)
+    });
+
+    return firstBatch || [];
   }
 
-  console.log('Total churn rows loaded:', allRows.length);
+  const requests = [];
+
+  for (let from = batchSize; from < totalRows; from += batchSize) {
+    requests.push(
+      window.globalQuerySupabase
+        .from('churn')
+        .select(select)
+        .order('detected_at', { ascending: false })
+        .order('churn_id', { ascending: false })
+        .range(from, from + batchSize - 1)
+    );
+  }
+
+  const results = await Promise.all(requests);
+
+  const allRows = [...(firstBatch || [])];
+
+  for (const result of results) {
+    if (result.error) throw result.error;
+    allRows.push(...(result.data || []));
+  }
+
+  console.log('Churn load:', {
+    rows: allRows.length,
+    batches: requests.length + 1,
+    roundTripMs: Math.round(performance.now() - startedAt)
+  });
 
   return allRows;
 }
@@ -289,7 +324,7 @@ function renderAgencyChurn() {
     switch: document.getElementById('showAgencySwitches').checked
   };
 
-  const visibleRows = interpreted.filter(item => Boolean(allowed[item.filterType]));
+  const visibleRows = interpreted.filter(item => Boolean(allowed[item.filterType])).slice(0, 200);;
   const body = document.querySelector('#agencyChurnTable tbody');
 
   body.innerHTML = visibleRows.map(item => `
@@ -326,7 +361,7 @@ function renderRecentChurn() {
     ].filter(Boolean).join(' ').toLowerCase();
 
     return Boolean(allowed[item.type]) && (!query || searchableText.includes(query));
-  });
+  }).slice(0, 200);
 
   const body = document.querySelector('#recentChurnTable tbody');
 
