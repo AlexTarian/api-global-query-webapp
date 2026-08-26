@@ -28,6 +28,7 @@ async function searchEmployers_(filters) {
       employer_state,
       contact_name,
       contact_phone,
+      phone_digits,
       contact_email,
       total_cases,
       total_workers,
