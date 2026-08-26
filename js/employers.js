@@ -96,25 +96,32 @@ async function searchEmployers_(filters) {
 
 function renderEmployers_(rows = employers) {
   const body = document.querySelector('#employersTable tbody');
-  const agencyDisplay = agencyNames.length === 0
-    ? '—'
-    : agencyNames.length === 1
-      ? agencyNames[0]
-      : `${agencyNames[0]} +${agencyNames.length - 1}`;
 
-  const agencyTooltip = agencyNames.length
-    ? agencyNames.join(', ')
-    : '—';
+  body.innerHTML = rows.map(row => {
+    const agencyNames = Array.isArray(row.agency_names)
+      ? row.agency_names.filter(Boolean)
+      : [];
 
-  body.innerHTML = rows.map(row => `
-    <tr class="clickable" data-fein="${GlobalQueryUI.escapeHtml_(row.fein)}">
-      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer_name || '')}">${GlobalQueryUI.escapeHtml_(row.employer_name || '—')}</td>
-      <td>${GlobalQueryUI.escapeHtml_(row.employer_state || '—')}</td>
-      <td class="center">${(Number(row.total_cases) || 0).toLocaleString()}</td>
-      <td>${GlobalQueryUI.formatDate(row.latest_start_date)}</td>
-      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(agencyTooltip)}">${GlobalQueryUI.escapeHtml_(agencyDisplay)}</td>
-    </tr>
-  `).join('') || '<tr><td colspan="5" class="muted">No matching employers.</td></tr>';
+    const agencyDisplay = agencyNames.length === 0
+      ? '—'
+      : agencyNames.length === 1
+        ? agencyNames[0]
+        : `${agencyNames[0]} +${agencyNames.length - 1}`;
+
+    const agencyTooltip = agencyNames.length
+      ? agencyNames.join(', ')
+      : '—';
+
+    return `
+      <tr class="clickable" data-fein="${GlobalQueryUI.escapeHtml_(row.fein)}">
+        <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer_name || '')}">${GlobalQueryUI.escapeHtml_(row.employer_name || '—')}</td>
+        <td>${GlobalQueryUI.escapeHtml_(row.employer_state || '—')}</td>
+        <td class="center">${(Number(row.total_cases) || 0).toLocaleString()}</td>
+        <td>${GlobalQueryUI.formatDate(row.latest_start_date)}</td>
+        <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(agencyTooltip)}">${GlobalQueryUI.escapeHtml_(agencyDisplay)}</td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="5" class="muted">No matching employers.</td></tr>';
 }
 
 async function loadEmployerCaseHistory_(fein) {
