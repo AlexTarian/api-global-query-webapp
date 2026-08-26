@@ -452,6 +452,15 @@
   font-size: 1.35rem;
 }
 
+.employer-active-field {
+  display: flex;
+  align-items: flex-end;
+}
+
+.employer-active-field .toggle {
+  width: 100%;
+}
+
 .agency-table-wrap {
   height: 400px;
   overflow-y: auto;
