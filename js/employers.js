@@ -8,6 +8,10 @@ function getCurrentEmployerFilters_() {
     fein: document.getElementById('filterEmployerFein').value.trim(),
     state: document.getElementById('filterEmployerState').value,
     agency: document.getElementById('filterEmployerAgency').value,
+    phone: document.getElementById('filterEmployerPhone').value.trim(),
+    email: document.getElementById('filterEmployerEmail').value.trim(),
+    h2alc: document.getElementById('filterEmployerH2alc').value,
+    active: document.getElementById('filterEmployerActive').checked,
     limit: Number(document.getElementById('employerLimit').value) || 25
   };
 }
@@ -25,6 +29,8 @@ async function searchEmployers_(filters) {
       contact_email,
       total_cases,
       total_workers,
+      is_h2alc,
+      is_active,
       latest_start_date,
       agency_keys,
       agency_names
@@ -44,6 +50,30 @@ async function searchEmployers_(filters) {
 
   if (filters.agency) {
     query = query.contains('agency_keys', [filters.agency]);
+  }
+
+  if (filters.phone) {
+    const phoneDigits = filters.phone.replace(/\D/g, '');
+
+    if (phoneDigits) {
+      query = query.ilike('phone_digits', `%${phoneDigits}%`);
+    }
+  }
+
+  if (filters.email) {
+    query = query.ilike('contact_email', `%${filters.email}%`);
+  }
+
+  if (filters.active) {
+    query = query.eq('is_active', true);
+  }
+
+  if (filters.h2alc === 'true') {
+    query = query.eq('is_h2alc', true);
+  }
+
+  if (filters.h2alc === 'false') {
+    query = query.eq('is_h2alc', false);
   }
 
   query = query
@@ -392,7 +422,12 @@ function bindEmployerEvents_() {
     .addEventListener('click', applyEmployerFilters_);
 
   // Search when Enter is pressed in either text field.
-  ['filterEmployerName', 'filterEmployerFein'].forEach(id => {
+  [
+    'filterEmployerName',
+    'filterEmployerFein',
+    'filterEmployerPhone',
+    'filterEmployerEmail'
+  ].forEach(id => {
     document.getElementById(id).addEventListener('keydown', event => {
       if (event.key === 'Enter') {
         event.preventDefault();
@@ -407,10 +442,15 @@ function bindEmployerEvents_() {
         'filterEmployerName',
         'filterEmployerFein',
         'filterEmployerState',
-        'filterEmployerAgency'
+        'filterEmployerAgency',
+        'filterEmployerPhone',
+        'filterEmployerEmail',
+        'filterEmployerH2alc'
       ].forEach(id => {
         document.getElementById(id).value = '';
       });
+
+      document.getElementById('filterEmployerActive').checked = false;
 
       applyEmployerFilters_();
     });
