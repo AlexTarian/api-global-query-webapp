@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 
 async function initializeApp() {
   const client = window.globalQuerySupabase;
+  let passwordRecoveryActive = false;
+  const isInvite = window.location.hash.includes('type=invite');
 
   bindAuthEvents();
 
@@ -9,6 +11,7 @@ async function initializeApp() {
     console.log('Supabase auth event:', event);
 
     if (event === 'PASSWORD_RECOVERY') {
+      passwordRecoveryActive = true;
       showPasswordSetup('reset');
       return;
     }
@@ -16,7 +19,11 @@ async function initializeApp() {
     if (event === 'USER_UPDATED') return;
 
     if (newSession) {
-      showGlobalQuery(newSession);
+      if (isInvite) {
+        showPasswordSetup('setup');
+      } else if (!passwordRecoveryActive) {
+        showGlobalQuery(newSession);
+      }
     } else {
       showLogin();
     }
@@ -31,7 +38,11 @@ async function initializeApp() {
   }
 
   if (session) {
-    showGlobalQuery(session);
+    if (isInvite) {
+      showPasswordSetup('setup');
+    } else if (!passwordRecoveryActive) {
+      showGlobalQuery(session);
+    }
   } else {
     showLogin();
   }
@@ -121,6 +132,7 @@ async function handlePasswordSetup(event) {
     }
 
     if (session) {
+      window.history.replaceState({}, document.title, window.location.pathname);
       showGlobalQuery(session);
     } else {
       message.textContent = 'Password saved. Please sign in.';
@@ -145,17 +157,22 @@ async function handleForgotPassword() {
 
   message.textContent = 'Sending password reset email...';
 
-  const { error } = await window.globalQuerySupabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}${window.location.pathname}`
-  });
+  try {
+    const { error } = await window.globalQuerySupabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}${window.location.pathname}`
+    });
 
-  if (error) {
-    console.error('Password reset request failed:', error);
-    message.textContent = error.message;
-    return;
+    if (error) {
+      console.error('Password reset request failed:', error);
+      message.textContent = error.message;
+      return;
+    }
+
+    message.textContent = 'Check your email for a password reset link.';
+  } catch (error) {
+    console.error('Unexpected password reset error:', error);
+    message.textContent = 'Could not send the password reset email.';
   }
-
-  message.textContent = 'Check your email for a password reset link.';
 }
 
 async function handleSignOut() {
