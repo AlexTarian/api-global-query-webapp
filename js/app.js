@@ -41,7 +41,7 @@ async function initializeApp() {
     if (isInvite) {
       showPasswordSetup('setup');
     } else if (!passwordRecoveryActive) {
-      showGlobalQuery(session);
+      (session);
     }
   } else {
     showLogin();
@@ -84,7 +84,7 @@ async function handleLogin(event) {
     }
 
     console.log('Supabase session established:', data.session.user.email);
-    showGlobalQuery(data.session);
+    (data.session);
 
   } catch (error) {
     console.error('Unexpected login error:', error);
@@ -133,7 +133,7 @@ async function handlePasswordSetup(event) {
 
     if (session) {
       window.history.replaceState({}, document.title, window.location.pathname);
-      showGlobalQuery(session);
+      (session);
     } else {
       message.textContent = 'Password saved. Please sign in.';
       showLogin();
@@ -227,4 +227,7 @@ function showGlobalQuery(session) {
   if (typeof window.initializeCases === 'function') {
     window.initializeCases();
   }
+
+  document.querySelector('.tab-btn[data-tab="jobOrdersTab"]')
+    ?.addEventListener('click', initialize790);
 }
