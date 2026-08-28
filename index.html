@@ -97,6 +97,7 @@
 
         <nav class="tabs" aria-label="GlobalQuery sections">
           <button class="tab-btn active" data-tab="casesTab">Cases</button>
+          <button class="tab-btn" data-tab="jobOrdersTab">790</button>
           <button class="tab-btn" data-tab="employersTab">Employers</button>
           <button class="tab-btn" data-tab="agenciesTab">Agencies</button>
           <button class="tab-btn" data-tab="churnTab">Churn</button>
@@ -196,6 +197,91 @@
 
           </div>
         </section>
+
+        <!-- ==================== 790 ==================== -->
+
+<section id="jobOrdersTab" class="tab-panel">
+  <div class="section">
+
+    <div class="section-header">
+      <div>
+        <h2>790 Job Orders</h2>
+        <p>Search the current State Workforce Agency job order snapshot.</p>
+      </div>
+    </div>
+
+    <div class="filters-grid">
+      <div class="field">
+        <label for="filter790CaseNum">Job order number</label>
+        <input id="filter790CaseNum" class="input" type="text" placeholder="JO-A-300-#####-######">
+      </div>
+
+      <div class="field">
+        <label for="filter790Employer">Employer name</label>
+        <input id="filter790Employer" class="input" type="text">
+      </div>
+
+      <div class="field">
+        <label for="filter790State">Employer state</label>
+        <select id="filter790State" class="select">
+          <option value="">All states</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filter790Email">Email</label>
+        <input id="filter790Email" class="input" type="email" placeholder="Search either email field">
+      </div>
+
+      <div class="field">
+        <label for="filter790Start">Start (from)</label>
+        <input id="filter790Start" class="input" type="date">
+      </div>
+
+      <div class="field">
+        <label for="filter790End">Start (end)</label>
+        <input id="filter790End" class="input" type="date">
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button id="apply790FiltersBtn" class="btn primary" type="button">⌕ Search</button>
+      <button id="clear790FiltersBtn" class="btn" type="button">⟲ Reset</button>
+      <span id="row790CountLabel" class="muted small"></span>
+      <span class="spacer"></span>
+      <label class="small muted" for="jobOrderLimit">Display</label>
+      <select id="jobOrderLimit" class="select" style="width:auto; min-height:38px; padding:7px 32px 7px 10px">
+        <option selected>25</option>
+        <option>50</option>
+        <option>100</option>
+        <option>250</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table id="jobOrdersTable">
+        <thead>
+          <tr>
+            <th>Job Order</th>
+            <th>Employer</th>
+            <th>State</th>
+            <th>Job Title</th>
+            <th>Period of Need</th>
+            <th class="center">Workers</th>
+            <th>Contact Email</th>
+            <th>Additional Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="8" class="center muted">Open the 790 tab to load job orders.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
 
         <!-- ==================== EMPLOYERS ==================== -->
 
