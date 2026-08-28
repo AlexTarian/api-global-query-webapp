@@ -3,6 +3,25 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 async function initializeApp() {
   const client = window.globalQuerySupabase;
 
+  bindAuthEvents();
+
+  client.auth.onAuthStateChange((event, newSession) => {
+    console.log('Supabase auth event:', event);
+
+    if (event === 'PASSWORD_RECOVERY') {
+      showPasswordSetup('reset');
+      return;
+    }
+
+    if (event === 'USER_UPDATED') return;
+
+    if (newSession) {
+      showGlobalQuery(newSession);
+    } else {
+      showLogin();
+    }
+  });
+
   const { data: { session }, error } = await client.auth.getSession();
 
   if (error) {
@@ -11,28 +30,17 @@ async function initializeApp() {
     return;
   }
 
-  bindAuthEvents();
-
   if (session) {
     showGlobalQuery(session);
   } else {
     showLogin();
   }
-
-  client.auth.onAuthStateChange((event, newSession) => {
-    if (event === 'PASSWORD_RECOVERY' || event === 'USER_UPDATED') return;
-
-    if (newSession) {
-      showGlobalQuery(newSession);
-    } else {
-      showLogin();
-    }
-  });
 }
 
 function bindAuthEvents() {
   document.getElementById('loginForm').addEventListener('submit', handleLogin);
   document.getElementById('passwordSetupForm').addEventListener('submit', handlePasswordSetup);
+  document.getElementById('forgotPasswordButton').addEventListener('click', handleForgotPassword);
   document.getElementById('signOutButton').addEventListener('click', handleSignOut);
 }
 
@@ -80,6 +88,11 @@ async function handlePasswordSetup(event) {
   const confirmPassword = document.getElementById('confirmPassword').value;
   const message = document.getElementById('passwordSetupMessage');
 
+  if (password.length < 8) {
+    message.textContent = 'Password must be at least 8 characters.';
+    return;
+  }
+
   if (password !== confirmPassword) {
     message.textContent = 'Passwords do not match.';
     return;
@@ -87,18 +100,62 @@ async function handlePasswordSetup(event) {
 
   message.textContent = 'Saving password...';
 
-  const { error } = await window.globalQuerySupabase.auth.updateUser({ password });
+  try {
+    const { data, error } = await window.globalQuerySupabase.auth.updateUser({ password });
+
+    if (error) {
+      console.error('Password update failed:', error);
+      message.textContent = error.message;
+      return;
+    }
+
+    console.log('Password updated for:', data?.user?.email);
+
+    const { data: { session }, error: sessionError } =
+      await window.globalQuerySupabase.auth.getSession();
+
+    if (sessionError) {
+      console.error('Could not read session after password update:', sessionError);
+      message.textContent = 'Password saved, but the session could not be loaded.';
+      return;
+    }
+
+    if (session) {
+      showGlobalQuery(session);
+    } else {
+      message.textContent = 'Password saved. Please sign in.';
+      showLogin();
+    }
+
+  } catch (error) {
+    console.error('Unexpected password update error:', error);
+    message.textContent = 'Could not save the password.';
+  }
+}
+
+async function handleForgotPassword() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const message = document.getElementById('loginMessage');
+
+  if (!email) {
+    message.textContent = 'Enter your email address first.';
+    document.getElementById('loginEmail').focus();
+    return;
+  }
+
+  message.textContent = 'Sending password reset email...';
+
+  const { error } = await window.globalQuerySupabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}${window.location.pathname}`
+  });
 
   if (error) {
+    console.error('Password reset request failed:', error);
     message.textContent = error.message;
     return;
   }
 
-  const { data: { session } } = await window.globalQuerySupabase.auth.getSession();
-
-  if (session) {
-    showGlobalQuery(session);
-  }
+  message.textContent = 'Check your email for a password reset link.';
 }
 
 async function handleSignOut() {
@@ -119,11 +176,23 @@ function showLogin() {
   document.getElementById('globalQueryApp').hidden = true;
 }
 
-function showPasswordSetup() {
+function showPasswordSetup(mode = 'setup') {
   document.getElementById('authScreen').hidden = false;
   document.getElementById('loginPanel').hidden = true;
   document.getElementById('passwordSetupPanel').hidden = false;
   document.getElementById('globalQueryApp').hidden = true;
+
+  const title = document.getElementById('passwordSetupTitle');
+
+  if (title) {
+    title.textContent = mode === 'reset'
+      ? 'Reset Password'
+      : 'Set Password';
+  }
+
+  document.getElementById('newPassword').value = '';
+  document.getElementById('confirmPassword').value = '';
+  document.getElementById('passwordSetupMessage').textContent = '';
 }
 
 function showGlobalQuery(session) {
