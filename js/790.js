@@ -242,16 +242,21 @@ async function load790StateDropdown_() {
 function open790Modal_(row) {
   if (!row) return;
 
-  if (typeof setCaseModalMode_ === 'function') {
-    setCaseModalMode_('790');
-  }
+  setCaseModalMode_('790');
 
   const modal = document.getElementById('detailModalOverlay');
+  const businessInfo = document.getElementById('modalBusinessInfo');
+  const jobInfo = document.getElementById('modalJobInfo');
+  const jobDescription = document.getElementById('modalJobDesc');
 
   document.getElementById('detailModalTitle').textContent = row.caseNum || '790 Job Order';
   document.getElementById('detailModalEmployer').textContent = row.employer || '—';
 
-  GlobalQueryUI.appendKv(document.getElementById('modalBusinessInfo'), [
+  businessInfo.innerHTML = '';
+  jobInfo.innerHTML = '';
+  jobDescription.textContent = '';
+
+  GlobalQueryUI.appendKv(businessInfo, [
     ['Address', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(row.address) || '—')],
     ['FEIN', GlobalQueryUI.escapeHtml_(row.fein || '—')],
     ['Contact', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(row.contact) || '—')],
@@ -260,7 +265,7 @@ function open790Modal_(row) {
     ['Additional Email', GlobalQueryUI.escapeHtml_(row.additionalEmail || '—')]
   ]);
 
-  GlobalQueryUI.appendKv(document.getElementById('modalJobInfo'), [
+  GlobalQueryUI.appendKv(jobInfo, [
     ['Job Title', GlobalQueryUI.escapeHtml_(row.jobTitle || '—')],
     ['Period of Need', `${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}`],
     ['Workers', GlobalQueryUI.escapeHtml_(row.workers ?? '—')],
@@ -269,11 +274,10 @@ function open790Modal_(row) {
     ['State', GlobalQueryUI.escapeHtml_(row.state || '—')]
   ]);
 
-  document.getElementById('modalJobDesc').textContent = row.desc || '—';
+  jobDescription.textContent = row.desc || '—';
 
   modal.classList.remove('hidden');
 }
-
 
 // ==================== EVENTS ====================
 
