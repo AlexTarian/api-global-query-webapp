@@ -187,7 +187,7 @@ function render790JobOrders_(rows = jobOrders790) {
 
   body.innerHTML = rows.map(row => `
     <tr class="clickable" data-790-case="${GlobalQueryUI.escapeHtml_(row.caseNum)}">
-      <td class="nowrap">${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
+      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.caseNum || '')}">${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}">${GlobalQueryUI.escapeHtml_(row.employer || '—')}</td>
       <td class="center nowrap">${GlobalQueryUI.escapeHtml_(row.state || '—')}</td>
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.jobTitle || '')}">${GlobalQueryUI.escapeHtml_(row.jobTitle || '—')}</td>
