@@ -237,6 +237,43 @@ async function load790StateDropdown_() {
   }
 }
 
+// ==================== Modal ====================
+
+function open790Modal_(row) {
+  if (!row) return;
+
+  if (typeof setCaseModalMode_ === 'function') {
+    setCaseModalMode_('790');
+  }
+
+  const modal = document.getElementById('detailModalOverlay');
+
+  document.getElementById('detailModalTitle').textContent = row.caseNum || '790 Job Order';
+  document.getElementById('detailModalEmployer').textContent = row.employer || '—';
+
+  GlobalQueryUI.appendKv(document.getElementById('modalBusinessInfo'), [
+    ['Address', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(row.address) || '—')],
+    ['FEIN', GlobalQueryUI.escapeHtml_(row.fein || '—')],
+    ['Contact', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(row.contact) || '—')],
+    ['Phone', GlobalQueryUI.escapeHtml_(row.phone || '—')],
+    ['Contact Email', GlobalQueryUI.escapeHtml_(row.contactEmail || '—')],
+    ['Additional Email', GlobalQueryUI.escapeHtml_(row.additionalEmail || '—')]
+  ]);
+
+  GlobalQueryUI.appendKv(document.getElementById('modalJobInfo'), [
+    ['Job Title', GlobalQueryUI.escapeHtml_(row.jobTitle || '—')],
+    ['Period of Need', `${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}`],
+    ['Workers', GlobalQueryUI.escapeHtml_(row.workers ?? '—')],
+    ['Cert Req', GlobalQueryUI.escapeHtml_(row.cert || '—')],
+    ['Drive Req', GlobalQueryUI.escapeHtml_(row.drive || '—')],
+    ['State', GlobalQueryUI.escapeHtml_(row.state || '—')]
+  ]);
+
+  document.getElementById('modalJobDesc').textContent = row.desc || '—';
+
+  modal.classList.remove('hidden');
+}
+
 
 // ==================== EVENTS ====================
 
@@ -273,6 +310,14 @@ function bind790Events_() {
       event.preventDefault();
       apply790Filters();
     });
+  });
+
+  document.querySelector('#jobOrdersTable tbody').addEventListener('click', event => {
+    const row = event.target.closest('tr[data-790-case]');
+    if (!row) return;
+
+    const jobOrder = jobOrders790.find(item => item.caseNum === row.dataset['790Case']);
+    open790Modal_(jobOrder);
   });
 }
 
