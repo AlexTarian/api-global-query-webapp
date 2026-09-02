@@ -815,6 +815,153 @@
   .metric.loss .value { color: var(--loss); }
   .metric.switch .value { color: var(--switch); }
 
+  .nod-upload-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface-alt);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.nod-upload-card.dragover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.nod-upload-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--primary-hover);
+}
+
+.nod-upload-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.nod-upload-status {
+  margin-top: 10px;
+}
+
+.nod-summary-card {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.nod-summary-card > div {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+  min-width: 0;
+}
+
+.nod-summary-card span,
+.nod-summary-card strong {
+  display: block;
+}
+
+.nod-summary-card strong {
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nod-workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.nod-workspace-header h3,
+.nod-workspace-header p {
+  margin: 0;
+}
+
+.nod-deficiency-list {
+  display: grid;
+  gap: 14px;
+}
+
+.nod-deficiency-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-alt);
+  overflow: hidden;
+}
+
+.nod-deficiency-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.nod-deficiency-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.nod-deficiency-field {
+  display: grid;
+  gap: 5px;
+}
+
+.nod-deficiency-field .label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nod-deficiency-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .nod-upload-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .nod-upload-card .btn {
+    width: 100%;
+  }
+
+  .nod-summary-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 500px) {
+  .nod-summary-card {
+    grid-template-columns: 1fr;
+  }
+}
+
   .churn-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
   .toggle {
     display: inline-flex;
