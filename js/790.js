@@ -308,27 +308,10 @@ async function open790Employer_(fein) {
   }
 
   try {
-    const { data, error } = await window.globalQuerySupabase
-      .from('employers')
-      .select('fein')
-      .eq('fein', fein)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (!data) {
-      alert('This employer appears to be a new filer. GlobalQuery does not have historical employer data for them yet.');
-      return;
-    }
-
-    if (typeof window.openEmployerDetail === 'function') {
-      window.openEmployerDetail(fein);
-    }
-
+    await window.openEmployerDetail(fein);
   } catch (error) {
-    console.error('Could not check employer record:', error);
-
-    alert('GlobalQuery could not check this employer right now. Please try again.');
+    console.error('Could not open employer detail:', error);
+    alert('GlobalQuery could not load this employer right now. Please try again.');
   }
 }
 
