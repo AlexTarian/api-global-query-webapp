@@ -942,8 +942,6 @@
 
 .nod-deficiency-text {
   min-width: 0;
-  line-height: 1.45;
-  white-space: pre-wrap;
 }
 
 @media (max-width: 760px) {
