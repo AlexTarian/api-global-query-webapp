@@ -740,20 +740,37 @@
 }
 
 #jobOrdersTable {
+  width: 100%;
+  min-width: 0;
   table-layout: fixed;
-  min-width: 1200px;
 }
 
 #jobOrdersTable th,
-#jobOrdersTable td { 
+#jobOrdersTable td {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: middle;
 }
 
-#jobOrdersTable .ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+#jobOrdersTable th:nth-child(1),
+#jobOrdersTable td:nth-child(1) {
+  width: 24%;
+}
+
+#jobOrdersTable th:nth-child(2),
+#jobOrdersTable td:nth-child(2) {
+  width: 31%;
+}
+
+#jobOrdersTable th:nth-child(3),
+#jobOrdersTable td:nth-child(3) {
+  width: 23%;
+}
+
+#jobOrdersTable th:nth-child(4),
+#jobOrdersTable td:nth-child(4) {
+  width: 22%;
 }
 
 .positive {
