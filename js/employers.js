@@ -169,7 +169,7 @@ async function getEmployerByFein_(fein) {
       latest_start_date
     `)
     .eq('fein', fein)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 
@@ -185,11 +185,23 @@ async function openEmployerDetail_(fein) {
     employer = await getEmployerByFein_(fein);
   } catch (error) {
     console.error('Could not load employer:', error);
+
+    alert(
+      'GlobalQuery could not load this employer right now. ' +
+      'Please try again.'
+    );
+
     return;
   }
 
   if (!employer) {
-    console.warn('Employer not found:', fein);
+    console.info('Employer not yet in GlobalQuery:', fein);
+
+    alert(
+      'This employer appears to be a new filer. ' +
+      'GlobalQuery does not have historical employer data for them yet.'
+    );
+
     return;
   }
 
