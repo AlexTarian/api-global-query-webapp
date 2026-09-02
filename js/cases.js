@@ -267,8 +267,8 @@ function setCaseModalMode_(mode) {
   const isChurn = mode === 'churn';
   const isEmployer = mode === 'employer';
 
-  document.getElementById('modalBusinessJobSection')?.classList.toggle('hidden', !isCase);
-  document.getElementById('modalJobDescriptionSection')?.classList.toggle('hidden', !isCase);
+  document.getElementById('modalBusinessJobSection')?.classList.toggle('hidden', !(isCase || is790));
+  document.getElementById('modalJobDescriptionSection')?.classList.toggle('hidden', !(isCase || is790));
   document.getElementById('modalActionRow')?.classList.toggle('hidden', !isCase);
   document.getElementById('modalChurnInfoPanel')?.classList.toggle('hidden', !isChurn);
   document.getElementById('modalEmployerPanel')?.classList.toggle('hidden', !isEmployer);
