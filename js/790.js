@@ -186,34 +186,15 @@ function render790JobOrders_(rows = jobOrders790) {
   const body = document.querySelector('#jobOrdersTable tbody');
 
   body.innerHTML = rows.map(row => `
-    <tr data-790-case="${GlobalQueryUI.escapeHtml_(row.caseNum)}">
-      <td class="ellipsis" >${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
-
-      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}">
-        ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
-      </td>
-
-      <td>${GlobalQueryUI.escapeHtml_(row.state || '—')}</td>
-
-      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.jobTitle || '')}">
-        ${GlobalQueryUI.escapeHtml_(row.jobTitle || '—')}
-      </td>
-
-      <td>
-        ${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}
-      </td>
-
-      <td class="center">
-        ${GlobalQueryUI.escapeHtml_(row.workers ?? '—')}
-      </td>
-
-      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.contactEmail || '')}">
-        ${GlobalQueryUI.escapeHtml_(row.contactEmail || '—')}
-      </td>
-
-      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.additionalEmail || '')}">
-        ${GlobalQueryUI.escapeHtml_(row.additionalEmail || '—')}
-      </td>
+    <tr class="clickable" data-790-case="${GlobalQueryUI.escapeHtml_(row.caseNum)}">
+      <td class="nowrap">${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
+      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}">${GlobalQueryUI.escapeHtml_(row.employer || '—')}</td>
+      <td class="center nowrap">${GlobalQueryUI.escapeHtml_(row.state || '—')}</td>
+      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.jobTitle || '')}">${GlobalQueryUI.escapeHtml_(row.jobTitle || '—')}</td>
+      <td class="nowrap">${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}</td>
+      <td class="center nowrap">${GlobalQueryUI.escapeHtml_(row.workers ?? '—')}</td>
+      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.contactEmail || '')}">${GlobalQueryUI.escapeHtml_(row.contactEmail || '—')}</td>
+      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.additionalEmail || '')}">${GlobalQueryUI.escapeHtml_(row.additionalEmail || '—')}</td>
     </tr>
   `).join('') || '<tr><td colspan="8" class="muted">No matching job orders.</td></tr>';
 }
