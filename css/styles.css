@@ -745,9 +745,7 @@
 }
 
 #jobOrdersTable th,
-#jobOrdersTable td {
-  padding-left: 14px;
-  padding-right: 14px;  
+#jobOrdersTable td { 
   white-space: nowrap;
   vertical-align: middle;
 }
@@ -760,7 +758,7 @@
 
 #jobOrdersTable th:nth-child(1),
 #jobOrdersTable td:nth-child(1) {
-  width: 190px;
+  width: 175px;
 }
 
 #jobOrdersTable th:nth-child(2),
