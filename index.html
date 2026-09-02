@@ -101,6 +101,7 @@
           <button class="tab-btn" data-tab="employersTab">Employers</button>
           <button class="tab-btn" data-tab="agenciesTab">Agencies</button>
           <button class="tab-btn" data-tab="churnTab">Churn</button>
+          <button class="tab-btn" data-tab="nodTab">NOD</button>
         </nav>
 
         <!-- ==================== CASES ==================== -->
@@ -200,84 +201,84 @@
 
         <!-- ==================== 790 ==================== -->
 
-<section id="jobOrdersTab" class="tab-panel">
-  <div class="section">
+        <section id="jobOrdersTab" class="tab-panel">
+          <div class="section">
 
-    <div class="section-header">
-      <div>
-        <h2>790 Job Orders</h2>
-        <p>Search the current State Workforce Agency job order snapshot.</p>
-      </div>
-    </div>
+            <div class="section-header">
+              <div>
+                <h2>790 Job Orders</h2>
+                <p>Search the current State Workforce Agency job order snapshot.</p>
+              </div>
+            </div>
 
-    <div class="filters-grid">
-      <div class="field">
-        <label for="filter790CaseNum">Job order number</label>
-        <input id="filter790CaseNum" class="input" type="text" placeholder="JO-A-300-#####-######">
-      </div>
+            <div class="filters-grid">
+              <div class="field">
+                <label for="filter790CaseNum">Job order number</label>
+                <input id="filter790CaseNum" class="input" type="text" placeholder="JO-A-300-#####-######">
+              </div>
 
-      <div class="field">
-        <label for="filter790Employer">Employer name</label>
-        <input id="filter790Employer" class="input" type="text">
-      </div>
+              <div class="field">
+                <label for="filter790Employer">Employer name</label>
+                <input id="filter790Employer" class="input" type="text">
+              </div>
 
-      <div class="field">
-        <label for="filter790State">Employer state</label>
-        <select id="filter790State" class="select">
-          <option value="">All states</option>
-        </select>
-      </div>
+              <div class="field">
+                <label for="filter790State">Employer state</label>
+                <select id="filter790State" class="select">
+                  <option value="">All states</option>
+                </select>
+              </div>
 
-      <div class="field">
-        <label for="filter790Email">Email</label>
-        <input id="filter790Email" class="input" type="email" placeholder="Search either email field">
-      </div>
+              <div class="field">
+                <label for="filter790Email">Email</label>
+                <input id="filter790Email" class="input" type="email" placeholder="Search either email field">
+              </div>
 
-      <div class="field">
-        <label for="filter790Start">Start (from)</label>
-        <input id="filter790Start" class="input" type="date">
-      </div>
+              <div class="field">
+                <label for="filter790Start">Start (from)</label>
+                <input id="filter790Start" class="input" type="date">
+              </div>
 
-      <div class="field">
-        <label for="filter790End">Start (end)</label>
-        <input id="filter790End" class="input" type="date">
-      </div>
-    </div>
+              <div class="field">
+                <label for="filter790End">Start (end)</label>
+                <input id="filter790End" class="input" type="date">
+              </div>
+            </div>
 
-    <div class="toolbar">
-      <button id="apply790FiltersBtn" class="btn primary" type="button">⌕ Search</button>
-      <button id="clear790FiltersBtn" class="btn" type="button">⟲ Reset</button>
-      <span id="row790CountLabel" class="muted small"></span>
-      <span class="spacer"></span>
-      <label class="small muted" for="jobOrderLimit">Display</label>
-      <select id="jobOrderLimit" class="select" style="width:auto; min-height:38px; padding:7px 32px 7px 10px">
-        <option selected>25</option>
-        <option>50</option>
-        <option>100</option>
-        <option>250</option>
-      </select>
-    </div>
+            <div class="toolbar">
+              <button id="apply790FiltersBtn" class="btn primary" type="button">⌕ Search</button>
+              <button id="clear790FiltersBtn" class="btn" type="button">⟲ Reset</button>
+              <span id="row790CountLabel" class="muted small"></span>
+              <span class="spacer"></span>
+              <label class="small muted" for="jobOrderLimit">Display</label>
+              <select id="jobOrderLimit" class="select" style="width:auto; min-height:38px; padding:7px 32px 7px 10px">
+                <option selected>25</option>
+                <option>50</option>
+                <option>100</option>
+                <option>250</option>
+              </select>
+            </div>
 
-    <div class="table-wrap">
-      <table id="jobOrdersTable">
-        <thead>
-          <tr>
-            <th>Job Order</th>
-            <th>Employer</th>
-            <th>Period of Need</th>
-            <th>Job Title</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td colspan="4" class="center muted">Open the 790 tab to load job orders.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            <div class="table-wrap">
+              <table id="jobOrdersTable">
+                <thead>
+                  <tr>
+                    <th>Job Order</th>
+                    <th>Employer</th>
+                    <th>Period of Need</th>
+                    <th>Job Title</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="4" class="center muted">Open the 790 tab to load job orders.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-  </div>
-</section>
+          </div>
+        </section>
 
         <!-- ==================== EMPLOYERS ==================== -->
 
@@ -521,6 +522,73 @@
         </section>
       </main>
 
+      <!-- ==================== NOD ==================== -->
+
+      <section id="nodTab" class="tab-panel">
+        <div class="section">
+
+          <div class="section-header">
+            <div>
+              <h2>Notice of Deficiency</h2>
+              <p>Upload an NOD to parse deficiencies, match case data, and prepare response drafts.</p>
+            </div>
+          </div>
+
+          <div id="nodUploadCard" class="nod-upload-card">
+            <input id="nodFileInput" type="file" accept="application/pdf,.pdf" hidden>
+
+            <div class="nod-upload-icon">PDF</div>
+
+            <div class="nod-upload-copy">
+              <strong>Drop an NOD PDF here</strong>
+              <span class="muted small">or choose a file from your computer</span>
+            </div>
+
+            <button id="chooseNodFileBtn" class="btn primary" type="button">Choose PDF</button>
+          </div>
+
+          <div id="nodUploadStatus" class="muted small nod-upload-status">No NOD loaded.</div>
+
+          <div id="nodWorkspace" hidden>
+
+            <div class="nod-summary-card">
+              <div>
+                <span class="muted small">Case Number</span>
+                <strong id="nodCaseNumber">—</strong>
+              </div>
+
+              <div>
+                <span class="muted small">Employer</span>
+                <strong id="nodEmployerName">—</strong>
+              </div>
+
+              <div>
+                <span class="muted small">Case Source</span>
+                <strong id="nodCaseSource">—</strong>
+              </div>
+
+              <div>
+                <span class="muted small">Notice Date</span>
+                <strong id="nodNoticeDate">—</strong>
+              </div>
+            </div>
+
+            <div class="nod-workspace-header">
+              <div>
+                <h3>Deficiencies</h3>
+                <p id="nodDeficiencyCount" class="muted small">0 deficiencies detected.</p>
+              </div>
+
+              <button id="clearNodBtn" class="btn" type="button">Clear NOD</button>
+            </div>
+
+            <div id="nodDeficiencyList" class="nod-deficiency-list"></div>
+
+          </div>
+
+        </div>
+      </section>
+
       <!-- ==================== SIDEBAR ==================== -->
 
       <aside class="sidebar">
@@ -618,6 +686,7 @@
   <script src="./js/employers.js"></script>
   <script src="./js/agencies.js"></script>
   <script src="./js/churn.js"></script>
+  <script src="./js/nod.js"></script>
   <script src="./js/app.js"></script>
 
   <script>
