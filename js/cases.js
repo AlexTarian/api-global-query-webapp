@@ -263,6 +263,7 @@ async function loadStatusDropdown() {
 
 function setCaseModalMode_(mode) {
   const isCase = mode === 'case';
+  const is790 = mode === '790';
   const isChurn = mode === 'churn';
   const isEmployer = mode === 'employer';
 
