@@ -11,6 +11,7 @@ function createEmptyNodState_() {
     documentType: '',
     title: '',
     noticeDate: '',
+    dueDate: '',
     caseNumber: '',
     caseKey: '',
     employerName: '',
@@ -81,6 +82,11 @@ function renderNodWorkspace_() {
   document.getElementById('nodNoticeDate').textContent =
     currentNod.noticeDate
       ? GlobalQueryUI.formatDate(currentNod.noticeDate)
+      : 'Not parsed yet';
+
+  document.getElementById('nodDueDate').textContent =
+    currentNod.dueDate
+      ? GlobalQueryUI.formatDate(currentNod.dueDate)
       : 'Not parsed yet';
 
   renderNodDeficiencies_();
@@ -195,6 +201,7 @@ function loadTestNod_() {
     fileName: 'test-nod.pdf',
     documentType: 'NOD',
     noticeDate: '2026-09-02',
+    dueDate: '2026-09-07',
     caseNumber: 'H-300-25305-355491',
     caseKey: '25305-355491',
     employerName: 'Test Employer',
