@@ -188,7 +188,14 @@ function render790JobOrders_(rows = jobOrders790) {
   body.innerHTML = rows.map(row => `
     <tr class="clickable" data-790-case="${GlobalQueryUI.escapeHtml_(row.caseNum)}">
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.caseNum || '')}">${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
-      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}">${GlobalQueryUI.escapeHtml_(row.employer || '—')}</td>
+      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}">
+        ${row.fein
+          ? `<button type="button" class="case-employer-link" data-790-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}" title="View employer details">
+              ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
+            </button>`
+          : GlobalQueryUI.escapeHtml_(row.employer || '—')
+        }
+      </td>
       <td class="nowrap">${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}</td>
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.jobTitle || '')}">${GlobalQueryUI.escapeHtml_(row.jobTitle || '—')}</td>
     </tr>
@@ -248,9 +255,24 @@ function open790Modal_(row) {
   const businessInfo = document.getElementById('modalBusinessInfo');
   const jobInfo = document.getElementById('modalJobInfo');
   const jobDescription = document.getElementById('modalJobDesc');
+  const employerSubtitle = document.getElementById('detailModalEmployer');
 
   document.getElementById('detailModalTitle').textContent = row.caseNum || '790 Job Order';
-  document.getElementById('detailModalEmployer').textContent = row.employer || '—';
+ 
+  if (row.fein) {
+    employerSubtitle.innerHTML = `
+      <button
+        type="button"
+        class="modal-employer-link"
+        data-790-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}"
+        title="View employer details"
+      >
+        ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
+      </button>
+    `;
+  } else {
+    employerSubtitle.textContent = row.employer || '—';
+  }
 
   businessInfo.innerHTML = '';
   jobInfo.innerHTML = '';
@@ -277,6 +299,37 @@ function open790Modal_(row) {
   jobDescription.textContent = row.desc || '—';
 
   modal.classList.remove('hidden');
+}
+
+async function open790Employer_(fein) {
+  if (!fein) {
+    alert('This employer does not have a FEIN available for lookup.');
+    return;
+  }
+
+  try {
+    const { data, error } = await window.globalQuerySupabase
+      .from('employers')
+      .select('fein')
+      .eq('fein', fein)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      alert('This employer appears to be a new filer. GlobalQuery does not have historical employer data for them yet.');
+      return;
+    }
+
+    if (typeof window.openEmployerDetail === 'function') {
+      window.openEmployerDetail(fein);
+    }
+
+  } catch (error) {
+    console.error('Could not check employer record:', error);
+
+    alert('GlobalQuery could not check this employer right now. Please try again.');
+  }
 }
 
 // ==================== EVENTS ====================
@@ -323,7 +376,34 @@ function bind790Events_() {
     const jobOrder = jobOrders790.find(item => item.caseNum === row.dataset['790Case']);
     open790Modal_(jobOrder);
   });
+
+  document.querySelector('#jobOrdersTable tbody').addEventListener('click', async event => {
+    const employerLink = event.target.closest('[data-790-employer-fein]');
+
+    if (employerLink) {
+      event.stopPropagation();
+
+      await open790Employer_(employerLink.dataset['790EmployerFein']);
+      return;
+    }
+
+    const row = event.target.closest('tr[data-job-order]');
+    if (!row) return;
+
+    open790Modal_(
+      jobOrders790.find(item => item.caseNum === row.dataset.jobOrder)
+    );
+  });
+
+  document.getElementById('detailModalEmployer').addEventListener('click', async event => {
+    const employerLink = event.target.closest('[data-790-employer-fein]');
+    if (!employerLink) return;
+
+    await open790Employer_(employerLink.dataset['790EmployerFein']);
+  });
 }
+
+
 
 
 // ==================== INITIALIZATION ====================
