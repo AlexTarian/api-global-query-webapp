@@ -190,7 +190,7 @@ function render790JobOrders_(rows = jobOrders790) {
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.caseNum || '')}">${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}">
         ${row.fein
-          ? `<button type="button" class="case-employer-link" data-790-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}" title="View employer details">
+          ? `<button type="button" class="case-employer-link" data-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}" title="View employer details">
               ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
             </button>`
           : GlobalQueryUI.escapeHtml_(row.employer || '—')
@@ -261,12 +261,17 @@ function open790Modal_(row) {
  
   if (row.fein) {
     employerSubtitle.innerHTML = `
-      <button
-        type="button"
-        class="modal-employer-link"
-        data-790-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}"
-        title="View employer details"
-      >
+      <button type="button" class="modal-employer-link" data-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}" title="View employer details">
+        ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
+      </button>
+    `;
+  } else {
+    employerSubtitle.textContent = row.employer || '—';
+  }
+
+  if (row.fein) {
+    employerSubtitle.innerHTML = `
+      <button type="button" class="modal-employer-link" data-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}" title="View employer details">
         ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
       </button>
     `;
@@ -360,13 +365,16 @@ function bind790Events_() {
     open790Modal_(jobOrder);
   });
 
-  document.querySelector('#jobOrdersTable tbody').addEventListener('click', async event => {
-    const employerLink = event.target.closest('[data-790-employer-fein]');
+  document.querySelector('#jobOrdersTable tbody').addEventListener('click', event => {
+    const employerLink = event.target.closest('[data-employer-fein]');
 
     if (employerLink) {
       event.stopPropagation();
 
-      await open790Employer_(employerLink.dataset['790EmployerFein']);
+      if (typeof window.openEmployerDetail === 'function') {
+        window.openEmployerDetail(employerLink.dataset.employerFein);
+      }
+
       return;
     }
 
