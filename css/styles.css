@@ -816,7 +816,8 @@
   .metric.switch .value { color: var(--switch); }
 
   .nod-upload-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 18px;
   padding: 24px;
@@ -956,9 +957,14 @@
   }
 }
 
-@media (max-width: 500px) {
-  .nod-summary-card {
-    grid-template-columns: 1fr;
+@media (max-width: 700px) {
+  .nod-upload-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .nod-upload-card .btn {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }
 
