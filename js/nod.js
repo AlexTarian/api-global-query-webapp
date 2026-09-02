@@ -78,9 +78,6 @@ function renderNodWorkspace_() {
   document.getElementById('nodEmployerName').textContent =
     currentNod.employerName || 'Not parsed yet';
 
-  document.getElementById('nodCaseSource').textContent =
-    currentNod.caseSource || 'Not matched yet';
-
   document.getElementById('nodNoticeDate').textContent =
     currentNod.noticeDate
       ? GlobalQueryUI.formatDate(currentNod.noticeDate)
