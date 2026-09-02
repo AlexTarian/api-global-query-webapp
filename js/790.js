@@ -269,16 +269,6 @@ function open790Modal_(row) {
     employerSubtitle.textContent = row.employer || '—';
   }
 
-  if (row.fein) {
-    employerSubtitle.innerHTML = `
-      <button type="button" class="modal-employer-link" data-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}" title="View employer details">
-        ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
-      </button>
-    `;
-  } else {
-    employerSubtitle.textContent = row.employer || '—';
-  }
-
   businessInfo.innerHTML = '';
   jobInfo.innerHTML = '';
   jobDescription.textContent = '';
@@ -304,20 +294,6 @@ function open790Modal_(row) {
   jobDescription.textContent = row.desc || '—';
 
   modal.classList.remove('hidden');
-}
-
-async function open790Employer_(fein) {
-  if (!fein) {
-    alert('This employer does not have a FEIN available for lookup.');
-    return;
-  }
-
-  try {
-    await window.openEmployerDetail(fein);
-  } catch (error) {
-    console.error('Could not open employer detail:', error);
-    alert('GlobalQuery could not load this employer right now. Please try again.');
-  }
 }
 
 // ==================== EVENTS ====================
@@ -358,14 +334,6 @@ function bind790Events_() {
   });
 
   document.querySelector('#jobOrdersTable tbody').addEventListener('click', event => {
-    const row = event.target.closest('tr[data-790-case]');
-    if (!row) return;
-
-    const jobOrder = jobOrders790.find(item => item.caseNum === row.dataset['790Case']);
-    open790Modal_(jobOrder);
-  });
-
-  document.querySelector('#jobOrdersTable tbody').addEventListener('click', event => {
     const employerLink = event.target.closest('[data-employer-fein]');
 
     if (employerLink) {
@@ -378,12 +346,11 @@ function bind790Events_() {
       return;
     }
 
-    const row = event.target.closest('tr[data-job-order]');
+    const row = event.target.closest('tr[data-790-case]');
     if (!row) return;
 
-    open790Modal_(
-      jobOrders790.find(item => item.caseNum === row.dataset.jobOrder)
-    );
+    const jobOrder = jobOrders790.find(item => item.caseNum === row.dataset['790Case']);
+    open790Modal_(jobOrder);
   });
 
   document.getElementById('detailModalEmployer').addEventListener('click', async event => {
