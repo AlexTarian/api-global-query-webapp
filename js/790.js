@@ -389,3 +389,4 @@ document
 
 window.initialize790 = initialize790;
 window.apply790Filters = apply790Filters;
+window.open790Modal = open790Modal_;
