@@ -1,6 +1,8 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 let currentNod = null;
 let nodInitialized = false;
+let nodRagCache = null;
+let nodRagLoadingPromise = null;
 
 
 // ==================== STATE ====================
@@ -707,6 +709,389 @@ async function findNodMainCase_(caseNumber) {
   return mapCaseRow_(data);
 }
 
+
+// ==================== RAG ====================
+
+async function loadNodRagCache_() {
+  if (nodRagCache) return nodRagCache;
+  if (nodRagLoadingPromise) return nodRagLoadingPromise;
+
+  nodRagLoadingPromise = (async () => {
+    const client = window.globalQuerySupabase;
+
+    const [
+      deficienciesResult,
+      cfrResult,
+      interpretationsResult,
+      caseLawResult,
+      promptConfigResult
+    ] = await Promise.all([
+      client
+        .from('nod_rag_deficiencies')
+        .select(`
+          id,
+          case_number,
+          employer,
+          job_type,
+          deficiency_number,
+          deficiency_category,
+          deficiency_type,
+          applicable_regulatory_citations,
+          context,
+          modification_required,
+          response_paragraph,
+          attachments_needed,
+          outcome_reviewer_note
+        `),
+
+      client
+        .from('nod_rag_cfr')
+        .select(`
+          id,
+          regulation_number,
+          text,
+          summary
+        `),
+
+      client
+        .from('nod_rag_interpretations')
+        .select(`
+          id,
+          regulation,
+          topic,
+          summary,
+          dol_misreading,
+          response_strategy,
+          when_to_use,
+          related_case_law,
+          notes
+        `),
+
+      client
+        .from('nod_rag_case_law')
+        .select(`
+          id,
+          case_name,
+          keywords,
+          takeaway
+        `),
+
+      client
+        .from('nod_prompt_config')
+        .select(`
+          key,
+          value,
+          enabled,
+          notes
+        `)
+        .eq('enabled', true)
+    ]);
+
+    const results = [
+      ['deficiencies', deficienciesResult],
+      ['cfr', cfrResult],
+      ['interpretations', interpretationsResult],
+      ['case law', caseLawResult],
+      ['prompt config', promptConfigResult]
+    ];
+
+    for (const [label, result] of results) {
+      if (result.error) {
+        throw new Error(`Could not load NOD ${label}: ${result.error.message}`);
+      }
+    }
+
+    const promptConfig = {};
+
+    for (const row of promptConfigResult.data || []) {
+      if (row.key) {
+        promptConfig[row.key] = row.value ?? '';
+      }
+    }
+
+    nodRagCache = {
+      deficiencies: deficienciesResult.data || [],
+      cfr: cfrResult.data || [],
+      interpretations: interpretationsResult.data || [],
+      caseLaw: caseLawResult.data || [],
+      promptConfig
+    };
+
+    console.log('NOD RAG cache loaded:', {
+      deficiencies: nodRagCache.deficiencies.length,
+      cfr: nodRagCache.cfr.length,
+      interpretations: nodRagCache.interpretations.length,
+      caseLaw: nodRagCache.caseLaw.length,
+      promptConfig: Object.keys(promptConfig).length
+    });
+
+    return nodRagCache;
+  })();
+
+  try {
+    return await nodRagLoadingPromise;
+  } finally {
+    nodRagLoadingPromise = null;
+  }
+}
+
+function normalizeRagText_(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/§/g, '')
+    .replace(/[^a-z0-9.()]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
+function normalizeRagDeficiencyType_(value) {
+  return normalizeRagText_(value)
+    .replace(/\bnotice of deficiency\b/g, '')
+    .replace(/\bdeficiency\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
+function tokenizeRagText_(value) {
+  const stopWords = new Set([
+    'the', 'and', 'for', 'that', 'with', 'this', 'from',
+    'must', 'will', 'shall', 'into', 'your', 'their',
+    'employer', 'application', 'job', 'order', 'provide',
+    'required', 'requirement', 'requirements'
+  ]);
+
+  return new Set(
+    normalizeRagText_(value)
+      .split(' ')
+      .filter(word => word.length >= 4 && !stopWords.has(word))
+  );
+}
+
+
+function countRagOverlap_(a, b) {
+  const left = tokenizeRagText_(a);
+  const right = tokenizeRagText_(b);
+
+  let score = 0;
+
+  for (const word of left) {
+    if (right.has(word)) score++;
+  }
+
+  return score;
+}
+
+function findNodCfrResults_(deficiency, cache) {
+  const citations = Array.isArray(deficiency.citations)
+    ? deficiency.citations
+    : [];
+
+  if (!citations.length) return [];
+
+  const normalizedCitations = citations.map(normalizeRagCitation_);
+
+  return cache.cfr
+    .filter(row => {
+      const regulation = normalizeRagCitation_(row.regulation_number);
+
+      return normalizedCitations.some(citation =>
+        regulation === citation ||
+        regulation.startsWith(citation) ||
+        citation.startsWith(regulation)
+      );
+    })
+    .slice(0, 3)
+    .map(row => ({
+      ...row,
+      title: row.regulation_number || 'CFR Result'
+    }));
+}
+
+function normalizeRagCitation_(value) {
+  return String(value || '')
+    .toUpperCase()
+    .replace(/20\s*CFR/g, '')
+    .replace(/§/g, '')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+function findSimilarNodDeficiencies_(deficiency, cache) {
+  const targetType = normalizeRagDeficiencyType_(deficiency.type);
+  const targetModification = deficiency.modificationRequired || '';
+  const targetContext = deficiency.context || '';
+
+  const scored = cache.deficiencies.map(row => {
+    const rowType = normalizeRagDeficiencyType_(
+      row.deficiency_type || row.deficiency_category
+    );
+
+    const typeExact =
+      targetType &&
+      rowType &&
+      targetType === rowType;
+
+    const typeRelated =
+      targetType &&
+      rowType &&
+      (
+        targetType.includes(rowType) ||
+        rowType.includes(targetType)
+      );
+
+    const modificationScore = countRagOverlap_(
+      targetModification,
+      row.modification_required
+    );
+
+    const contextScore = countRagOverlap_(
+      targetContext,
+      row.context
+    );
+
+    const score =
+      (typeExact ? 100 : typeRelated ? 50 : 0) +
+      (modificationScore * 4) +
+      contextScore;
+
+    return {
+      ...row,
+      _score: score,
+      _typeExact: typeExact,
+      _typeRelated: typeRelated
+    };
+  });
+
+  return scored
+    .filter(row => row._score > 0)
+    .sort((a, b) => {
+      if (a._typeExact !== b._typeExact) {
+        return Number(b._typeExact) - Number(a._typeExact);
+      }
+
+      if (a._typeRelated !== b._typeRelated) {
+        return Number(b._typeRelated) - Number(a._typeRelated);
+      }
+
+      return b._score - a._score;
+    })
+    .slice(0, 3)
+    .map(row => ({
+      ...row,
+      title:
+        row.deficiency_type ||
+        row.deficiency_category ||
+        `Case ${row.case_number || ''}`.trim()
+    }));
+}
+
+function findNodInterpretations_(deficiency, cache) {
+  const queryText = [
+    deficiency.type,
+    deficiency.context,
+    deficiency.modificationRequired,
+    ...(deficiency.citations || [])
+  ].join(' ');
+
+  return cache.interpretations
+    .map(row => {
+      const interpretationText = [
+        row.regulation,
+        row.topic,
+        row.summary,
+        row.dol_misreading,
+        row.response_strategy,
+        row.when_to_use,
+        row.related_case_law,
+        row.notes
+      ].join(' ');
+
+      const score = countRagOverlap_(queryText, interpretationText);
+
+      return {
+        ...row,
+        _score: score
+      };
+    })
+    .filter(row => row._score >= 2)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, 2)
+    .map(row => ({
+      ...row,
+      title: row.topic || row.regulation || 'Interpretation Note'
+    }));
+}
+
+function findNodCaseLaw_(deficiency, cache) {
+  const queryText = [
+    deficiency.type,
+    deficiency.context,
+    deficiency.modificationRequired,
+    ...(deficiency.citations || [])
+  ].join(' ');
+
+  return cache.caseLaw
+    .map(row => {
+      const searchableText = [
+        row.case_name,
+        row.keywords,
+        row.takeaway
+      ].join(' ');
+
+      const score = countRagOverlap_(queryText, searchableText);
+
+      return {
+        ...row,
+        _score: score
+      };
+    })
+    .filter(row => row._score >= 2)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, 2)
+    .map(row => ({
+      ...row,
+      title: row.case_name || 'Case Law'
+    }));
+}
+
+async function loadRagForDeficiency_(index) {
+  const deficiency = currentNod?.deficiencies?.[index];
+  if (!deficiency) return;
+
+  const cache = await loadNodRagCache_();
+
+  deficiency.rag = {
+    employerData: currentNod.caseData || null,
+    cfrResults: findNodCfrResults_(deficiency, cache),
+    similarDeficiencies: findSimilarNodDeficiencies_(deficiency, cache),
+    interpretationResults: findNodInterpretations_(deficiency, cache),
+    caseLawResults: findNodCaseLaw_(deficiency, cache)
+  };
+
+  console.log(`RAG loaded for deficiency ${deficiency.number}:`, {
+    cfr: deficiency.rag.cfrResults.length,
+    similarDeficiencies: deficiency.rag.similarDeficiencies.length,
+    interpretations: deficiency.rag.interpretationResults.length,
+    caseLaw: deficiency.rag.caseLawResults.length
+  });
+
+  if (index === currentNod.activeDeficiencyIndex) {
+    renderNodRagInfo_();
+  }
+}
+
+async function loadRagForAllDeficiencies_() {
+  if (!currentNod?.deficiencies?.length) return;
+
+  await loadNodRagCache_();
+
+  for (let index = 0; index < currentNod.deficiencies.length; index++) {
+    await loadRagForDeficiency_(index);
+  }
+}
+
 // ==================== RENDER ====================
 
 function renderNodWorkspace_() {
@@ -827,7 +1212,13 @@ function renderNodRagSection_(title, type, items = []) {
               data-rag-type="${GlobalQueryUI.escapeHtml_(type)}"
               data-rag-index="${index}"
             >
-              ${GlobalQueryUI.escapeHtml_(getNodRagItemLabel_(type, item, index))}
+              ${GlobalQueryUI.escapeHtml_(
+                item?.title ||
+                item?.case_number ||
+                item?.regulation_number ||
+                item?.case_name ||
+                `Result ${index + 1}`
+              )}
             </button>
           `).join('')
         : '<div class="muted small">No results loaded.</div>'
@@ -1020,6 +1411,8 @@ function loadTestNod_() {
       }
     ]
   });
+
+  await loadRagForAllDeficiencies_();
 
   document.getElementById('nodUploadStatus').textContent =
     'Test NOD loaded.';
