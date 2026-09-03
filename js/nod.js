@@ -1,3 +1,4 @@
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 let currentNod = null;
 let nodInitialized = false;
 
@@ -43,24 +44,107 @@ function clearCurrentNod_() {
 
 async function parseNodPdf_(file) {
   const status = document.getElementById('nodUploadStatus');
+  const startedAt = performance.now();
 
   status.textContent = `Reading ${file.name}...`;
 
-  const formData = new FormData();
-  formData.append('file', file);
+  const bytes = new Uint8Array(await file.arrayBuffer());
 
-  const { data, error } = await window.globalQuerySupabase.functions.invoke('parse-nod', {
-    body: formData
-  });
-
-  if (error) {
-    console.error('NOD PDF extraction failed:', error);
-    throw error;
+  if (!looksLikePdf_(bytes)) {
+    throw new Error('The selected file does not appear to be a valid PDF.');
   }
 
-  console.log('NOD PDF extraction result:', data);
+  const loadingTask = pdfjsLib.getDocument({ data: bytes });
+  const pdf = await loadingTask.promise;
 
-  return data;
+  const pages = [];
+
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+    status.textContent = `Reading ${file.name}... page ${pageNumber} of ${pdf.numPages}`;
+
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+
+    const text = extractPdfPageText_(content.items);
+
+    pages.push(text);
+
+    page.cleanup();
+  }
+
+  await pdf.destroy();
+
+  const text = pages.join('\n\n');
+  const extractionMs = Math.round(performance.now() - startedAt);
+
+  const result = {
+    fileName: file.name,
+    fileSizeBytes: file.size,
+    pageCount: pages.length,
+    textLength: text.length,
+    extractionMs,
+    text
+  };
+
+  console.log('NOD PDF extraction result:', {
+    fileName: result.fileName,
+    fileSizeBytes: result.fileSizeBytes,
+    pageCount: result.pageCount,
+    textLength: result.textLength,
+    extractionMs: result.extractionMs
+  });
+
+  return result;
+}
+
+
+function looksLikePdf_(bytes) {
+  if (!bytes || bytes.length < 5) return false;
+
+  return (
+    bytes[0] === 0x25 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x44 &&
+    bytes[3] === 0x46 &&
+    bytes[4] === 0x2D
+  );
+}
+
+
+function extractPdfPageText_(items) {
+  const lines = [];
+  let currentLine = [];
+  let lastY = null;
+
+  for (const item of items || []) {
+    const text = String(item?.str || '');
+    if (!text) continue;
+
+    const y = item?.transform?.[5];
+
+    if (
+      lastY !== null &&
+      Number.isFinite(y) &&
+      Math.abs(y - lastY) > 2
+    ) {
+      if (currentLine.length) {
+        lines.push(currentLine.join(' '));
+        currentLine = [];
+      }
+    }
+
+    currentLine.push(text);
+
+    if (Number.isFinite(y)) {
+      lastY = y;
+    }
+  }
+
+  if (currentLine.length) {
+    lines.push(currentLine.join(' '));
+  }
+
+  return lines.join('\n');
 }
 
 async function handleNodFile_(file) {
@@ -84,8 +168,9 @@ async function handleNodFile_(file) {
     const result = await parseNodPdf_(file);
 
     status.textContent =
-      `${file.name}: extracted ${Number(result.textLength || 0).toLocaleString()} characters ` +
-      `in ${Number(result.extractionMs || 0).toLocaleString()} ms.`;
+      `${file.name}: extracted ${result.textLength.toLocaleString()} characters ` +
+      `from ${result.pageCount.toLocaleString()} page${result.pageCount === 1 ? '' : 's'} ` +
+      `in ${result.extractionMs.toLocaleString()} ms.`;
 
     console.log('Extracted NOD text:\n', result.text);
 
