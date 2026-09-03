@@ -675,6 +675,27 @@
     </div>
   </div>
 
+  <!-- ==================== RAG MODAL ==================== -->
+
+  <div id="nodRagModalOverlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="nodRagModalTitle">
+    <div class="modal">
+
+      <div class="modal-header">
+        <div>
+          <div id="nodRagModalTitle" class="modal-title">RAG Detail</div>
+          <div id="nodRagModalSubtitle" class="muted"></div>
+        </div>
+
+        <button id="closeNodRagModalBtn" class="btn icon" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="nodRagModalContent"></div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ==================== JAVASCRIPT ==================== -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
