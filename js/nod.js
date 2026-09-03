@@ -719,25 +719,121 @@ function renderNodWorkspace_() {
 
   workspace.hidden = false;
 
-  document.getElementById('nodCaseNumber').textContent =
-    currentNod.caseNumber || 'Not parsed yet';
-
-  document.getElementById('nodEmployerName').textContent =
-    currentNod.employerName || 'Not parsed yet';
-
-  document.getElementById('nodNoticeDate').textContent =
-    currentNod.noticeDate
-      ? GlobalQueryUI.formatDate(currentNod.noticeDate)
-      : 'Not parsed yet';
-
-  document.getElementById('nodDueDate').textContent =
-    currentNod.dueDate
-      ? GlobalQueryUI.formatDate(currentNod.dueDate)
-      : 'Not parsed yet';
-
-  renderNodDeficiencies_();
+  renderNodNoticeInfo_();
+  renderNodDeficiencySelector_();
+  renderSelectedNodDeficiency_();
+  renderNodRagInfo_();
 }
 
+function renderNodNoticeInfo_() {
+  GlobalQueryUI.appendKv(
+    document.getElementById('nodNoticeInfo'),
+    [
+      ['Case Number', GlobalQueryUI.escapeHtml_(currentNod.caseNumber || '—')],
+      ['Employer', GlobalQueryUI.escapeHtml_(currentNod.employerName || '—')],
+      ['Received', currentNod.noticeDate ? GlobalQueryUI.formatDate(currentNod.noticeDate) : '—'],
+      ['Due', currentNod.dueDate ? GlobalQueryUI.formatDate(currentNod.dueDate) : '—'],
+      ['Case Data', GlobalQueryUI.escapeHtml_(currentNod.caseSource || 'Not Found')]
+    ]
+  );
+}
+
+function renderNodDeficiencySelector_() {
+  const container = document.getElementById('nodDeficiencySelector');
+  const deficiencies = currentNod.deficiencies || [];
+
+  container.innerHTML = deficiencies.map((deficiency, index) => `
+    <button
+      type="button"
+      class="nod-deficiency-select ${index === currentNod.activeDeficiencyIndex ? 'active' : ''}"
+      data-deficiency-index="${index}"
+    >
+      ${GlobalQueryUI.escapeHtml_(
+        `${deficiency.number ?? index + 1}. ${deficiency.type || 'Unclassified'}`
+      )}
+    </button>
+  `).join('') || '<div class="muted">No deficiencies detected.</div>';
+}
+
+function renderSelectedNodDeficiency_() {
+  const container = document.getElementById('nodSelectedDeficiencyInfo');
+  const deficiency = currentNod.deficiencies?.[currentNod.activeDeficiencyIndex];
+
+  if (!deficiency) {
+    container.innerHTML = '<div class="muted">Select a deficiency.</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="nod-detail-field">
+      <span class="label">Deficiency Type</span>
+      <div>${GlobalQueryUI.escapeHtml_(deficiency.type || '—')}</div>
+    </div>
+
+    <div class="nod-detail-field">
+      <span class="label">Citations</span>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(formatNodCitations_(deficiency.citations))}</div>
+    </div>
+
+    <div class="nod-detail-field">
+      <span class="label">Context</span>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(deficiency.context || '—')}</div>
+    </div>
+
+    <div class="nod-detail-field">
+      <span class="label">Modification Required</span>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(deficiency.modificationRequired || '—')}</div>
+    </div>
+  `;
+}
+
+function renderNodRagInfo_() {
+  const container = document.getElementById('nodRagInfo');
+  const deficiency = currentNod.deficiencies?.[currentNod.activeDeficiencyIndex];
+
+  if (!deficiency) {
+    container.innerHTML = '<div class="muted">No deficiency selected.</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    ${renderNodRagSection_(
+      'Employer Data',
+      currentNod.caseData
+        ? [`${currentNod.caseData.employer || currentNod.employerName || 'Matched case data'}`]
+        : []
+    )}
+
+    ${renderNodRagSection_('CFR Results', deficiency.rag?.cfrResults)}
+    ${renderNodRagSection_('Similar Deficiencies', deficiency.rag?.similarDeficiencies)}
+    ${renderNodRagSection_('Interpretation Notes', deficiency.rag?.interpretationResults)}
+    ${renderNodRagSection_('Case Law', deficiency.rag?.caseLawResults)}
+  `;
+}
+
+
+function renderNodRagSection_(title, items = []) {
+  const values = Array.isArray(items) ? items : [];
+
+  return `
+    <div class="nod-rag-section">
+      <div class="nod-rag-label">${GlobalQueryUI.escapeHtml_(title)}</div>
+
+      ${values.length
+        ? values.map((item, index) => `
+            <button type="button" class="nod-rag-item" data-rag-index="${index}">
+              ${GlobalQueryUI.escapeHtml_(
+                typeof item === 'string'
+                  ? item
+                  : item.title || item.caseNumber || item.citation || `Result ${index + 1}`
+              )}
+            </button>
+          `).join('')
+        : '<div class="muted small">No results loaded.</div>'
+      }
+    </div>
+  `;
+}
 
 function renderNodDeficiencies_() {
   const container = document.getElementById('nodDeficiencyList');
@@ -835,6 +931,23 @@ function bindNodEvents_() {
 
     handleNodFile_(event.dataTransfer?.files?.[0]);
   });
+
+  document.getElementById('nodDeficiencySelector').addEventListener('click', event => {
+    const button = event.target.closest('[data-deficiency-index]');
+    if (!button) return;
+
+    const index = Number(button.dataset.deficiencyIndex);
+
+    if (!Number.isInteger(index)) return;
+    if (!currentNod?.deficiencies?.[index]) return;
+
+    currentNod.activeDeficiencyIndex = index;
+
+    renderNodDeficiencySelector_();
+    renderSelectedNodDeficiency_();
+    renderNodRagInfo_();
+  });
+  
 }
 
 
