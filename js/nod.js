@@ -19,6 +19,7 @@ function createEmptyNodState_() {
     caseSource: '',
     caseData: null,
     parseMetadata: null,
+    activeDeficiencyIndex: 0,
     deficiencies: []
   };
 }
@@ -167,6 +168,9 @@ async function handleNodFile_(file) {
     const result = await parseNodPdf_(file);
     const parsed = parseNodText(result.text);
 
+    const caseKey = normalizeNodCaseKey_(parsed.caseNumber);
+    const caseMatch = await matchNodCase_(parsed.caseNumber, caseKey);
+
     console.log('Parsed NOD:', parsed);
 
     setCurrentNod_({
@@ -176,17 +180,24 @@ async function handleNodFile_(file) {
       noticeDate: parsed.date || '',
       dueDate: calculateNodDueDate_(parsed.date),
       caseNumber: parsed.caseNumber || '',
-      caseKey: normalizeNodCaseKey_(parsed.caseNumber),
-      employerName: parsed.employerName || '',
+      caseKey,
+      employerName: caseMatch.data?.employer || parsed.employerName || '',
+      caseSource: caseMatch.source,
+      caseData: caseMatch.data,
       parseMetadata: parsed.parseMetadata || null,
-      deficiencies: parsed.deficiencies || []
+      activeDeficiencyIndex: 0,
+      deficiencies: prepareNodDeficiencies_(parsed.deficiencies || [])
     });
+
+    const matchText = caseMatch.source
+      ? ` Matched case data from ${caseMatch.source}.`
+      : ' No matching GlobalQuery case data was found.';
 
     status.textContent =
       `${file.name}: parsed ${parsed.deficiencyCount.toLocaleString()} ` +
       `deficienc${parsed.deficiencyCount === 1 ? 'y' : 'ies'} from ` +
-      `${result.pageCount.toLocaleString()} page${result.pageCount === 1 ? '' : 's'} ` +
-      `in ${result.extractionMs.toLocaleString()} ms.`;
+      `${result.pageCount.toLocaleString()} page${result.pageCount === 1 ? '' : 's'}.` +
+      matchText;
 
   } catch (error) {
     status.textContent = `Could not read ${file.name}.`;
@@ -579,6 +590,122 @@ else if (
 }
 
 
+// ==================== ENRICH ====================
+
+function prepareNodDeficiencies_(deficiencies = []) {
+  return deficiencies.map(deficiency => ({
+    ...deficiency,
+
+    rag: {
+      employerData: null,
+      cfrResults: [],
+      similarDeficiencies: [],
+      interpretationResults: [],
+      caseLawResults: []
+    },
+
+    draftResponse: '',
+    customInstructions: ''
+  }));
+}
+
+
+// ==================== MATCH ====================
+
+async function matchNodCase_(caseNumber, caseKey) {
+  const jobOrder = await findNod790Case_(caseKey);
+
+  if (jobOrder) {
+    return {
+      source: '790 Snapshot',
+      data: jobOrder
+    };
+  }
+
+  const mainCase = await findNodMainCase_(caseNumber);
+
+  if (mainCase) {
+    return {
+      source: 'GlobalQuery',
+      data: mainCase
+    };
+  }
+
+  return {
+    source: '',
+    data: null
+  };
+}
+
+
+async function findNod790Case_(caseKey) {
+  if (!caseKey) return null;
+
+  const { data, error } = await window.globalQuerySupabase
+    .from('gq_790')
+    .select(`
+      joa_case_number,
+      case_key,
+      employer_name,
+      fein,
+      employer_state,
+      address,
+      contact,
+      phone,
+      contact_email,
+      additional_email,
+      job_title,
+      start_date,
+      end_date,
+      workers,
+      cert_required,
+      drive_required,
+      job_description,
+      synced_at
+    `)
+    .eq('case_key', caseKey)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data) return null;
+
+  return {
+    caseNum: data.joa_case_number || '',
+    caseKey: data.case_key || '',
+    employer: data.employer_name || '',
+    fein: data.fein || '',
+    state: data.employer_state || '',
+    address: data.address || '',
+    contact: data.contact || '',
+    phone: data.phone || '',
+    contactEmail: data.contact_email || '',
+    additionalEmail: data.additional_email || '',
+    jobTitle: data.job_title || '',
+    start: data.start_date || '',
+    end: data.end_date || '',
+    workers: data.workers ?? '',
+    cert: data.cert_required || '',
+    drive: data.drive_required || '',
+    desc: data.job_description || ''
+  };
+}
+
+
+async function findNodMainCase_(caseNumber) {
+  if (!caseNumber) return null;
+
+  const { data, error } = await window.globalQuerySupabase
+    .from('cases_with_occupation')
+    .select(caseSelect_(false))
+    .eq('case_num', caseNumber)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return mapCaseRow_(data);
+}
 
 // ==================== RENDER ====================
 
