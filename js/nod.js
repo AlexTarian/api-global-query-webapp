@@ -799,20 +799,20 @@ function renderNodRagInfo_() {
   container.innerHTML = `
     ${renderNodRagSection_(
       'Employer Data',
+      'employer',
       currentNod.caseData
-        ? [`${currentNod.caseData.employer || currentNod.employerName || 'Matched case data'}`]
+        ? [currentNod.caseData]
         : []
     )}
 
-    ${renderNodRagSection_('CFR Results', deficiency.rag?.cfrResults)}
-    ${renderNodRagSection_('Similar Deficiencies', deficiency.rag?.similarDeficiencies)}
-    ${renderNodRagSection_('Interpretation Notes', deficiency.rag?.interpretationResults)}
-    ${renderNodRagSection_('Case Law', deficiency.rag?.caseLawResults)}
+    ${renderNodRagSection_('CFR Results', 'cfr', deficiency.rag?.cfrResults)}
+    ${renderNodRagSection_('Similar Deficiencies', 'deficiency', deficiency.rag?.similarDeficiencies)}
+    ${renderNodRagSection_('Interpretation Notes', 'interpretation', deficiency.rag?.interpretationResults)}
+    ${renderNodRagSection_('Case Law', 'caseLaw', deficiency.rag?.caseLawResults)}
   `;
 }
 
-
-function renderNodRagSection_(title, items = []) {
+function renderNodRagSection_(title, type, items = []) {
   const values = Array.isArray(items) ? items : [];
 
   return `
@@ -821,18 +821,36 @@ function renderNodRagSection_(title, items = []) {
 
       ${values.length
         ? values.map((item, index) => `
-            <button type="button" class="nod-rag-item" data-rag-index="${index}">
-              ${GlobalQueryUI.escapeHtml_(
-                typeof item === 'string'
-                  ? item
-                  : item.title || item.caseNumber || item.citation || `Result ${index + 1}`
-              )}
+            <button
+              type="button"
+              class="nod-rag-item"
+              data-rag-type="${GlobalQueryUI.escapeHtml_(type)}"
+              data-rag-index="${index}"
+            >
+              ${GlobalQueryUI.escapeHtml_(getNodRagItemLabel_(type, item, index))}
             </button>
           `).join('')
         : '<div class="muted small">No results loaded.</div>'
       }
     </div>
   `;
+}
+
+function getNodRagItemLabel_(type, item, index) {
+  if (type === 'employer') {
+    return item?.employer || currentNod.employerName || 'Matched Case Data';
+  }
+
+  if (typeof item === 'string') return item;
+
+  return (
+    item?.title ||
+    item?.caseNumber ||
+    item?.case_number ||
+    item?.citation ||
+    item?.name ||
+    `Result ${index + 1}`
+  );
 }
 
 function renderNodDeficiencies_() {
@@ -946,6 +964,26 @@ function bindNodEvents_() {
     renderNodDeficiencySelector_();
     renderSelectedNodDeficiency_();
     renderNodRagInfo_();
+  });
+
+  document.getElementById('nodRagInfo').addEventListener('click', event => {
+    const item = event.target.closest('[data-rag-type][data-rag-index]');
+    if (!item) return;
+
+    const type = item.dataset.ragType;
+    const index = Number(item.dataset.ragIndex);
+
+    if (!Number.isInteger(index)) return;
+
+    if (type === 'employer') {
+      if (currentNod.caseData && typeof window.open790Modal === 'function') {
+        window.open790Modal(currentNod.caseData);
+      }
+
+      return;
+    }
+
+    openNodRagDetail_(type, index);
   });
   
 }
