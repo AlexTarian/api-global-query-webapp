@@ -110,7 +110,6 @@ function looksLikePdf_(bytes) {
   );
 }
 
-
 function extractPdfPageText_(items) {
   const lines = [];
   let currentLine = [];
@@ -166,20 +165,390 @@ async function handleNodFile_(file) {
 
   try {
     const result = await parseNodPdf_(file);
+    const parsed = parseNodText(result.text);
+
+    console.log('Parsed NOD:', parsed);
+
+    setCurrentNod_({
+      ...currentNod,
+      documentType: parsed.documentType || '',
+      title: parsed.title || '',
+      noticeDate: parsed.date || '',
+      dueDate: calculateNodDueDate_(parsed.date),
+      caseNumber: parsed.caseNumber || '',
+      caseKey: normalizeNodCaseKey_(parsed.caseNumber),
+      employerName: parsed.employerName || '',
+      parseMetadata: parsed.parseMetadata || null,
+      deficiencies: parsed.deficiencies || []
+    });
 
     status.textContent =
-      `${file.name}: extracted ${result.textLength.toLocaleString()} characters ` +
-      `from ${result.pageCount.toLocaleString()} page${result.pageCount === 1 ? '' : 's'} ` +
+      `${file.name}: parsed ${parsed.deficiencyCount.toLocaleString()} ` +
+      `deficienc${parsed.deficiencyCount === 1 ? 'y' : 'ies'} from ` +
+      `${result.pageCount.toLocaleString()} page${result.pageCount === 1 ? '' : 's'} ` +
       `in ${result.extractionMs.toLocaleString()} ms.`;
-
-    console.log('Extracted NOD text:\n', result.text);
 
   } catch (error) {
     status.textContent = `Could not read ${file.name}.`;
-
     console.error('Could not parse NOD PDF:', error);
   }
 }
+
+function parseNodText(text, subjectCaseNumber = null) {
+  text = normalizeNodPdfText_(text);
+
+  const documentType = detectDocumentType(text);
+  const title = extractTitle(text);
+  const date = extractDate(text);
+  const employerName = extractEmployerName(text);
+
+  const allCaseNumbers = extractCaseNumbers(text);
+  const pdfCaseNumber = allCaseNumbers.length ? allCaseNumbers[0] : null;
+  const caseNumber = subjectCaseNumber || pdfCaseNumber;
+
+  const enclosure = extractEnclosureSection(text);
+  const searchRegion = enclosure || text;
+  const deficiencyBlocks = splitDeficiencyBlocks(searchRegion);
+  const parsedDeficiencies = deficiencyBlocks.map(parseDeficiencyBlock);
+
+  const enclosureExact = enclosure != null;
+  const deficiencyHeadingExact = deficiencyBlocks.length
+    ? deficiencyBlocks.every(block => !!block.headingExact)
+    : false;
+  const documentStructureExact = enclosureExact && deficiencyHeadingExact;
+
+  return {
+    documentType,
+    title,
+    date,
+    caseNumber,
+    pdfCaseNumbersFound: allCaseNumbers,
+    employerName,
+    parseMetadata: {
+      enclosureExact,
+      deficiencyHeadingExact,
+      documentStructureExact,
+    },
+    deficiencyCount: parsedDeficiencies.length,
+    deficiencies: parsedDeficiencies,
+  };
+}
+
+function normalizeNodPdfText_(text = '') {
+  if (!text) return '';
+
+  text = String(text)
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+
+    // Normalize non-breaking / unusual spaces.
+    .replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g, ' ')
+
+    // Normalize spaced case numbers.
+    .replace(
+      /\b([A-Z])\s*-\s*(\d{3})\s*-\s*(\d{5})\s*-\s*(\d{6})\b/g,
+      '$1-$2-$3-$4'
+    )
+
+    // Fix common PDF.js split-letter artifacts.
+    .replace(/\bA pplication\b/g, 'Application')
+    .replace(/\bT emporary\b/g, 'Temporary')
+    .replace(/\bE mployment\b/g, 'Employment')
+    .replace(/\bC ertification\b/g, 'Certification')
+
+    // Collapse horizontal whitespace but preserve line breaks.
+    .replace(/[ \t]+/g, ' ')
+
+    // Remove spaces around line breaks.
+    .replace(/ *\n */g, '\n')
+
+    // Collapse excessive blank lines.
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return text;
+}
+
+function normalizeNodCaseKey_(caseNumber) {
+  return String(caseNumber || '')
+    .trim()
+    .toUpperCase()
+    .replace(/^H-300-/, '')
+    .replace(/^JO-A-300-/, '');
+}
+
+function detectDocumentType(text = '') {
+  const firstChunk = text.slice(0, 3000).toLowerCase();
+
+  if (firstChunk.includes('notice of deficiency')) return 'NOD';
+  if (firstChunk.includes('notice of acceptance')) return 'NOA';
+  if (firstChunk.includes('final determination')) return 'FINAL_DETERMINATION';
+  return 'UNKNOWN';
+}
+
+function extractTitle(text = '') {
+  const lines = text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  for (const line of lines.slice(0, 15)) {
+    const low = line.toLowerCase();
+    if (low.includes('notice of deficiency')) return line;
+    if (low.includes('notice of acceptance')) return line;
+    if (low.includes('final determination')) return line;
+  }
+
+  return null;
+}
+
+function extractDate(text = '') {
+  const match = text.match(
+    /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}\b/i
+  );
+  return match ? match[0] : null;
+}
+
+function calculateNodDueDate_(noticeDate) {
+  if (!noticeDate) return '';
+
+  const date = new Date(noticeDate);
+
+  if (Number.isNaN(date.getTime())) return '';
+
+  let remaining = 5;
+
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1);
+
+    const day = date.getDay();
+
+    if (day !== 0 && day !== 6) {
+      remaining--;
+    }
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function extractEmployerName(text = '') {
+  let match = text.match(/^\s*RE:\s*(.+?)\s*$/mi);
+  if (match) return match[1].trim();
+
+  match = text.match(/^\s*Re:\s*(.+?)\s*$/mi);
+  if (match) return match[1].trim();
+
+  return null;
+}
+
+function extractCaseNumbers(text = '') {
+  if (!text) return [];
+
+  const matches = text.match(/H-\d{3}-\d{5}-\d{6}/g) || [];
+  const seen = new Set();
+  const ordered = [];
+
+  for (const m of matches) {
+    if (!seen.has(m)) {
+      seen.add(m);
+      ordered.push(m);
+    }
+  }
+
+  return ordered;
+}
+
+function extractEnclosureSection(text = '') {
+  if (!text) return null;
+
+  // Best case: exact heading
+  let match = text.match(/ENCLOSURE\s+FOR\s+UNACCEPTABLE\s+APPLICATIONS(.*)$/is);
+  if (match) return match[1].trim();
+
+  // Last resort: start at the first deficiency block anywhere in the doc
+  match = text.match(/\bDeficiency(?:\s+#?\s*\d+)?\s*:\s*.*/i);
+  if (match && match.index != null) {
+    return text.slice(match.index).trim();
+  }
+
+  return null;
+}
+
+function splitDeficiencyBlocks(enclosureText = '') {
+  if (!enclosureText) return [];
+
+  const pattern =
+  /\bDeficiency(?:\s+#?\s*(\d+))?\s*:\s*(.*?)(?=\s*Applicable Regulatory Citations?\s*:|\s*In accordance with|\n|$)/gi;
+  const matches = [...enclosureText.matchAll(pattern)];
+  const blocks = [];
+
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const deficiencyNumber = match[1] ? Number(match[1]) : blocks.length + 1;
+    let deficiencyType = (match[2] || '').trim() || null;
+
+    if (deficiencyType) {
+      deficiencyType = deficiencyType
+        .replace(/\s*Applicable Regulatory Citations?\s*:.*$/i, '')
+        .replace(/\s*Modification Required\s*:.*$/i, '')
+        .replace(/\s*In accordance with Departmental regulations.*$/i, '')
+        .trim() || null;
+    }
+
+    const headingExact = match[1] != null;
+
+    const start = match.index + match[0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : enclosureText.length;
+    const body = enclosureText.slice(start, end).trim();
+
+    blocks.push({
+      number: deficiencyNumber,
+      type: deficiencyType,
+      rawBody: body,
+      headingText: match[0].trim(),
+      headingExact,
+    });
+  }
+
+  return blocks;
+}
+
+function parseDeficiencyBlock(block) {
+  const rawBody = block.rawBody || '';
+  const parseSignals = [];
+
+  let citations = extractCitations(rawBody);
+  let citationSection = '';
+  let context = '';
+  let modificationRequired = '';
+
+  const modMatch = rawBody.match(/Modification Required\s*:?\s*/i);
+  let preModText = rawBody.trim();
+  let postModText = '';
+
+  if (modMatch && modMatch.index != null) {
+    preModText = rawBody.slice(0, modMatch.index).trim();
+    postModText = rawBody.slice(modMatch.index + modMatch[0].length).trim();
+    modificationRequired = postModText;
+    parseSignals.push('modification_label_exact');
+  } else {
+    const employerMustMatch = rawBody.match(/\bThe employer must\b.*/is);
+    if (employerMustMatch && employerMustMatch.index != null) {
+      modificationRequired = employerMustMatch[0].trim();
+      preModText = rawBody.slice(0, employerMustMatch.index).trim();
+      parseSignals.push('modification_label_missing_employer_must_fallback');
+    } else {
+      parseSignals.push('modification_section_missing');
+    }
+  }
+
+  const citationLabelMatch = rawBody.match(/Applicable Regulatory Citations?\s*:\s*(.*)/is);
+
+  if (citationLabelMatch) {
+    const remainder = citationLabelMatch[1] || '';
+
+    if (modMatch) {
+      const relativeMod = remainder.match(/Modification Required\s*:?\s*/i);
+      if (relativeMod && relativeMod.index != null) {
+        citationSection = remainder.slice(0, relativeMod.index).trim();
+      } else {
+        citationSection = remainder.slice(0, 1000).trim();
+      }
+    } else {
+      citationSection = remainder.slice(0, 1000).trim();
+    }
+
+    const labeledCitations = extractCitations(citationSection);
+
+    if (labeledCitations.length) {
+      citations = labeledCitations;
+      parseSignals.push('citation_label_exact');
+    } else if (citations.length) {
+      parseSignals.push('citation_label_exact_full_block_fallback');
+    } else {
+      parseSignals.push('citation_section_missing');
+    }
+  } else {
+    if (citations.length) {
+      parseSignals.push('citation_label_missing_full_block_fallback');
+    } else {
+      parseSignals.push('citation_section_missing');
+    }
+  }
+
+  const contextStart = preModText.match(/In accordance with Departmental regulations.*/is);
+
+  if (contextStart) {
+    context = contextStart[0].trim();
+    parseSignals.push('context_phrase_exact');
+  } else {
+    if (citationLabelMatch) {
+      const citationLabelInPreMod = preModText.match(/Applicable Regulatory Citations?\s*:.*$/is);
+      if (citationLabelInPreMod && citationLabelInPreMod.index != null) {
+        context = preModText
+          .slice(citationLabelInPreMod.index + citationLabelInPreMod[0].length)
+          .trim();
+      } else {
+        context = preModText.trim();
+      }
+    } else {
+      context = preModText.trim();
+    }
+
+    if (context) {
+      parseSignals.push('context_phrase_missing_structural_fallback');
+    } else {
+      parseSignals.push('context_section_missing');
+    }
+  }
+
+  if (modificationRequired && context && context.includes(modificationRequired)) {
+    context = context.replace(modificationRequired, '').trim();
+  }
+
+  let score = 0;
+  if (parseSignals.includes('citation_label_exact')) score += 2;
+else if (
+  parseSignals.includes('citation_label_missing_full_block_fallback') ||
+  parseSignals.includes('citation_label_exact_full_block_fallback')
+) score += 1;
+
+  if (parseSignals.includes('modification_label_exact')) score += 2;
+  else if (parseSignals.includes('modification_label_missing_employer_must_fallback')) score += 1;
+
+  if (parseSignals.includes('context_phrase_exact')) score += 2;
+  else if (parseSignals.includes('context_phrase_missing_structural_fallback')) score += 1;
+
+  if (citations.length) score += 1;
+  if (modificationRequired) score += 1;
+  if (context) score += 1;
+
+  let parseConfidence = 'low';
+  if (score >= 7) parseConfidence = 'high';
+  else if (score >= 4) parseConfidence = 'medium';
+
+  const citationExact = parseSignals.includes('citation_label_exact');
+  const contextExact = parseSignals.includes('context_phrase_exact');
+  const modificationExact = parseSignals.includes('modification_label_exact');
+  const allExact = citationExact && contextExact && modificationExact;
+
+  return {
+    number: block.number,
+    type: block.type,
+    citations,
+    context,
+    modificationRequired,
+    parseSignals,
+    parseConfidence,
+    exactMatch: {
+      citations: citationExact,
+      context: contextExact,
+      modificationRequired: modificationExact,
+      all: allExact,
+    },
+  };
+}
+
 
 
 // ==================== RENDER ====================
