@@ -1382,7 +1382,7 @@ function bindNodEvents_() {
 
 // ==================== TEST HELPER ====================
 
-function loadTestNod_() {
+async function loadTestNod_() {
   setCurrentNod_({
     ...createEmptyNodState_(),
     file: new File(['test'], 'test-nod.pdf', { type: 'application/pdf' }),
