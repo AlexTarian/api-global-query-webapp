@@ -413,6 +413,35 @@ function splitDeficiencyBlocks(enclosureText = '') {
   return blocks;
 }
 
+function extractCitations(text = '') {
+  if (!text) return [];
+
+  const matches = text.match(
+    /(?:20\s*CFR\s*)?§?\s*\d{3}\.\d+(?:\([a-zA-Z0-9]+\))*/g
+  ) || [];
+
+  const seen = new Set();
+  const citations = [];
+
+  for (const match of matches) {
+    const cleaned = match
+      .replace(/\s+/g, ' ')
+      .replace(/^§\s*/, '')
+      .trim();
+
+    const normalized = cleaned.startsWith('20 CFR')
+      ? cleaned
+      : `20 CFR § ${cleaned}`;
+
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      citations.push(normalized);
+    }
+  }
+
+  return citations;
+}
+
 function parseDeficiencyBlock(block) {
   const rawBody = block.rawBody || '';
   const parseSignals = [];
