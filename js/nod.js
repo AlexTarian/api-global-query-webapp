@@ -41,11 +41,35 @@ function clearCurrentNod_() {
 
 // ==================== FILE HANDLING ====================
 
-function handleNodFile_(file) {
+async function parseNodPdf_(file) {
+  const status = document.getElementById('nodUploadStatus');
+
+  status.textContent = `Reading ${file.name}...`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { data, error } = await window.globalQuerySupabase.functions.invoke('parse-nod', {
+    body: formData
+  });
+
+  if (error) {
+    console.error('NOD PDF extraction failed:', error);
+    throw error;
+  }
+
+  console.log('NOD PDF extraction result:', data);
+
+  return data;
+}
+
+async function handleNodFile_(file) {
   if (!file) return;
 
+  const status = document.getElementById('nodUploadStatus');
+
   if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-    document.getElementById('nodUploadStatus').textContent = 'Please choose a PDF file.';
+    status.textContent = 'Please choose a PDF file.';
     return;
   }
 
@@ -56,8 +80,20 @@ function handleNodFile_(file) {
 
   setCurrentNod_(nod);
 
-  document.getElementById('nodUploadStatus').textContent =
-    `${file.name} selected. Parsing will be added next.`;
+  try {
+    const result = await parseNodPdf_(file);
+
+    status.textContent =
+      `${file.name}: extracted ${Number(result.textLength || 0).toLocaleString()} characters ` +
+      `in ${Number(result.extractionMs || 0).toLocaleString()} ms.`;
+
+    console.log('Extracted NOD text:\n', result.text);
+
+  } catch (error) {
+    status.textContent = `Could not read ${file.name}.`;
+
+    console.error('Could not parse NOD PDF:', error);
+  }
 }
 
 
