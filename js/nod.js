@@ -1384,15 +1384,13 @@ function getNodRagTypeLabel_(type) {
 }
 
 function renderNodCfrDetail_(item, container) {
-  console.log('CFR item:', item);
-
-  GlobalQueryUI.appendKv(container, [
-    ['Regulation', GlobalQueryUI.escapeHtml_(item.regulation_number || '—')],
-    ['Summary', GlobalQueryUI.escapeHtml_(item.summary || '—')]
-  ]);
 
   if (item.text) {
     container.insertAdjacentHTML('beforeend', `
+      <div class="modal-panel" style="margin-top:16px">
+        <h4>Summary</h4>
+        <div class="nod-deficiency-summary">${GlobalQueryUI.escapeHtml_(item.summary)}</div>
+      </div>
       <div class="modal-panel" style="margin-top:16px">
         <h4>Regulation Text</h4>
         <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.text)}</div>
