@@ -1212,13 +1212,7 @@ function renderNodRagSection_(title, type, items = []) {
               data-rag-type="${GlobalQueryUI.escapeHtml_(type)}"
               data-rag-index="${index}"
             >
-              ${GlobalQueryUI.escapeHtml_(
-                item?.title ||
-                item?.case_number ||
-                item?.regulation_number ||
-                item?.case_name ||
-                `Result ${index + 1}`
-              )}
+              ${GlobalQueryUI.escapeHtml_(getNodRagItemLabel_(type, item, index))}
             </button>
           `).join('')
         : '<div class="muted small">No results loaded.</div>'
@@ -1232,16 +1226,31 @@ function getNodRagItemLabel_(type, item, index) {
     return item?.employer || currentNod.employerName || 'Matched Case Data';
   }
 
-  if (typeof item === 'string') return item;
+  if (type === 'cfr') {
+    return item?.regulation_number || `CFR Result ${index + 1}`;
+  }
 
-  return (
-    item?.title ||
-    item?.caseNumber ||
-    item?.case_number ||
-    item?.citation ||
-    item?.name ||
-    `Result ${index + 1}`
-  );
+  if (type === 'deficiency') {
+    const employer = item?.employer || '';
+    const deficiencyType = item?.deficiency_type || item?.deficiency_category || '';
+    const caseNumber = item?.case_number || '';
+
+    return [
+      deficiencyType,
+      employer,
+      caseNumber
+    ].filter(Boolean).join(' — ') || `Similar Deficiency ${index + 1}`;
+  }
+
+  if (type === 'interpretation') {
+    return item?.topic || item?.regulation || `Interpretation ${index + 1}`;
+  }
+
+  if (type === 'caseLaw') {
+    return item?.case_name || `Case Law ${index + 1}`;
+  }
+
+  return `Result ${index + 1}`;
 }
 
 function renderNodDeficiencies_() {
@@ -1306,6 +1315,140 @@ function formatNodCitations_(citations) {
 
   return String(citations || '—');
 }
+
+
+// ==================== RAG =======================
+
+function getNodRagItems_(type) {
+  const deficiency = currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
+
+  if (!deficiency) return [];
+
+  switch (type) {
+    case 'cfr':
+      return deficiency.rag?.cfrResults || [];
+
+    case 'deficiency':
+      return deficiency.rag?.similarDeficiencies || [];
+
+    case 'interpretation':
+      return deficiency.rag?.interpretationResults || [];
+
+    case 'caseLaw':
+      return deficiency.rag?.caseLawResults || [];
+
+    default:
+      return [];
+  }
+}
+
+
+function openNodRagDetail_(type, index) {
+  const items = getNodRagItems_(type);
+  const item = items[index];
+
+  if (!item) return;
+
+  const overlay = document.getElementById('nodRagModalOverlay');
+  const title = document.getElementById('nodRagModalTitle');
+  const subtitle = document.getElementById('nodRagModalSubtitle');
+  const content = document.getElementById('nodRagModalContent');
+
+  title.textContent = getNodRagItemLabel_(type, item, index);
+  subtitle.textContent = getNodRagTypeLabel_(type);
+
+  content.innerHTML = '';
+
+  if (type === 'cfr') {
+    renderNodCfrDetail_(item, content);
+  } else if (type === 'deficiency') {
+    renderNodSimilarDeficiencyDetail_(item, content);
+  } else if (type === 'interpretation') {
+    renderNodInterpretationDetail_(item, content);
+  } else if (type === 'caseLaw') {
+    renderNodCaseLawDetail_(item, content);
+  }
+
+  overlay.classList.remove('hidden');
+}
+
+
+function getNodRagTypeLabel_(type) {
+  const labels = {
+    cfr: 'CFR Result',
+    deficiency: 'Similar Deficiency',
+    interpretation: 'Interpretation Note',
+    caseLaw: 'Case Law'
+  };
+
+  return labels[type] || 'RAG Result';
+}
+
+function renderNodCfrDetail_(item, container) {
+  GlobalQueryUI.appendKv(container, [
+    ['Regulation', GlobalQueryUI.escapeHtml_(item.regulation_number || '—')],
+    ['Summary', GlobalQueryUI.escapeHtml_(item.summary || '—')]
+  ]);
+
+  if (item.text) {
+    container.insertAdjacentHTML('beforeend', `
+      <div class="modal-panel" style="margin-top:16px">
+        <h4>Regulation Text</h4>
+        <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.text)}</div>
+      </div>
+    `);
+  }
+}
+
+function renderNodSimilarDeficiencyDetail_(item, container) {
+  GlobalQueryUI.appendKv(container, [
+    ['Case Number', GlobalQueryUI.escapeHtml_(item.case_number || '—')],
+    ['Employer', GlobalQueryUI.escapeHtml_(item.employer || '—')],
+    ['Job Type', GlobalQueryUI.escapeHtml_(item.job_type || '—')],
+    ['Deficiency Type', GlobalQueryUI.escapeHtml_(item.deficiency_type || item.deficiency_category || '—')],
+    ['Citations', GlobalQueryUI.escapeHtml_(item.applicable_regulatory_citations || '—')]
+  ]);
+
+  container.insertAdjacentHTML('beforeend', `
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Context</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.context || '—')}</div>
+    </div>
+
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Modification Required</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.modification_required || '—')}</div>
+    </div>
+
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Response Paragraph</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.response_paragraph || '—')}</div>
+    </div>
+  `);
+}
+
+function renderNodInterpretationDetail_(item, container) {
+  GlobalQueryUI.appendKv(container, [
+    ['Regulation', GlobalQueryUI.escapeHtml_(item.regulation || '—')],
+    ['Topic', GlobalQueryUI.escapeHtml_(item.topic || '—')],
+    ['Summary', GlobalQueryUI.escapeHtml_(item.summary || '—')],
+    ['DOL Misreading', GlobalQueryUI.escapeHtml_(item.dol_misreading || '—')],
+    ['Response Strategy', GlobalQueryUI.escapeHtml_(item.response_strategy || '—')],
+    ['When to Use', GlobalQueryUI.escapeHtml_(item.when_to_use || '—')],
+    ['Related Case Law', GlobalQueryUI.escapeHtml_(item.related_case_law || '—')],
+    ['Notes', GlobalQueryUI.escapeHtml_(item.notes || '—')]
+  ]);
+}
+
+function renderNodCaseLawDetail_(item, container) {
+  GlobalQueryUI.appendKv(container, [
+    ['Case Name', GlobalQueryUI.escapeHtml_(item.case_name || '—')],
+    ['Keywords', GlobalQueryUI.escapeHtml_(item.keywords || '—')],
+    ['Takeaway', GlobalQueryUI.escapeHtml_(item.takeaway || '—')]
+  ]);
+}
+
+
 
 
 // ==================== EVENTS ====================
@@ -1375,6 +1518,16 @@ function bindNodEvents_() {
     }
 
     openNodRagDetail_(type, index);
+  });
+
+  document.getElementById('closeNodRagModalBtn').addEventListener('click', () => {
+    document.getElementById('nodRagModalOverlay').classList.add('hidden');
+  });
+
+  document.getElementById('nodRagModalOverlay').addEventListener('click', event => {
+    if (event.target === event.currentTarget) {
+      event.currentTarget.classList.add('hidden');
+    }
   });
   
 }
