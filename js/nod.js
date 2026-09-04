@@ -164,8 +164,6 @@ async function handleNodFile_(file) {
   nod.file = file;
   nod.fileName = file.name;
 
-  setCurrentNod_(nod);
-
   try {
     const result = await parseNodPdf_(file);
     const parsed = parseNodText(result.text);
@@ -176,7 +174,7 @@ async function handleNodFile_(file) {
     console.log('Parsed NOD:', parsed);
 
     setCurrentNod_({
-      ...currentNod,
+      ...nod,
       documentType: parsed.documentType || '',
       title: parsed.title || '',
       noticeDate: parsed.date || '',
@@ -190,6 +188,8 @@ async function handleNodFile_(file) {
       activeDeficiencyIndex: 0,
       deficiencies: prepareNodDeficiencies_(parsed.deficiencies || [])
     });
+
+    await loadRagForAllDeficiencies_();
 
     const matchText = caseMatch.source
       ? ` Matched case data from ${caseMatch.source}.`
