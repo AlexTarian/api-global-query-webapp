@@ -1223,31 +1223,23 @@ function renderNodRagSection_(title, type, items = []) {
 
 function getNodRagItemLabel_(type, item, index) {
   if (type === 'employer') {
-    return item?.employer || currentNod.employerName || 'Matched Case Data';
+    return item?.employer || 'Matched Case Data';
   }
 
   if (type === 'cfr') {
-    return item?.regulation_number || `CFR Result ${index + 1}`;
+    return item?.regulation_number || `Regulation ${index + 1}`;
   }
 
   if (type === 'deficiency') {
-    const employer = item?.employer || '';
-    const deficiencyType = item?.deficiency_type || item?.deficiency_category || '';
-    const caseNumber = item?.case_number || '';
-
-    return [
-      deficiencyType,
-      employer,
-      caseNumber
-    ].filter(Boolean).join(' — ') || `Similar Deficiency ${index + 1}`;
+    return item?.case_number || `Case ${index + 1}`;
   }
-
+    
   if (type === 'interpretation') {
-    return item?.topic || item?.regulation || `Interpretation ${index + 1}`;
+    return item?.topic || `Interpretation ${index + 1}`;
   }
 
   if (type === 'caseLaw') {
-    return item?.case_name || `Case Law ${index + 1}`;
+    return item?.case_name || `Case ${index + 1}`;
   }
 
   return `Result ${index + 1}`;
@@ -1385,6 +1377,8 @@ function getNodRagTypeLabel_(type) {
 }
 
 function renderNodCfrDetail_(item, container) {
+  console.log('CFR item:', item);
+
   GlobalQueryUI.appendKv(container, [
     ['Regulation', GlobalQueryUI.escapeHtml_(item.regulation_number || '—')],
     ['Summary', GlobalQueryUI.escapeHtml_(item.summary || '—')]
