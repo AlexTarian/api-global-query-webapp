@@ -1400,15 +1400,16 @@ function renderNodCfrDetail_(item, container) {
 }
 
 function renderNodSimilarDeficiencyDetail_(item, container) {
-  GlobalQueryUI.appendKv(container, [
-    ['Case Number', GlobalQueryUI.escapeHtml_(item.case_number || '—')],
-    ['Employer', GlobalQueryUI.escapeHtml_(item.employer || '—')],
-    ['Job Type', GlobalQueryUI.escapeHtml_(item.job_type || '—')],
-    ['Deficiency Type', GlobalQueryUI.escapeHtml_(item.deficiency_type || item.deficiency_category || '—')],
-    ['Citations', GlobalQueryUI.escapeHtml_(item.applicable_regulatory_citations || '—')]
-  ]);
+  const employer = GlobalQueryUI.escapeHtml_(item.employer || '—');
+  const deficiency = GlobalQueryUI.escapeHtml_(item.deficiency_type || item.deficiency_category || '—');
+  const citation = GlobalQueryUI.escapeHtml_(item.applicable_regulatory_citations || '—');
 
   container.insertAdjacentHTML('beforeend', `
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Notice of Deficiency</h4>
+      <div class="nod-deficiency-text">${employer} • ${deficiency} • ${citation}</div>
+    </div>
+  
     <div class="modal-panel" style="margin-top:16px">
       <h4>Context</h4>
       <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.context || '—')}</div>
