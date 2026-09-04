@@ -888,19 +888,27 @@ function findNodCfrResults_(deficiency, cache) {
     ? deficiency.citations
     : [];
 
-  if (!citations.length) return [];
+  const normalizedCitations = citations
+    .map(normalizeRagCitation_)
+    .filter(Boolean);
 
-  const normalizedCitations = citations.map(normalizeRagCitation_);
+  if (!normalizedCitations.length) return [];
 
   return cache.cfr
     .filter(row => {
       const regulation = normalizeRagCitation_(row.regulation_number);
 
-      return normalizedCitations.some(citation =>
-        regulation === citation ||
-        regulation.startsWith(citation) ||
-        citation.startsWith(regulation)
-      );
+      if (!regulation) return false;
+
+      return normalizedCitations.some(citation => {
+        if (!citation) return false;
+
+        return (
+          regulation === citation ||
+          regulation.startsWith(citation) ||
+          citation.startsWith(regulation)
+        );
+      });
     })
     .slice(0, 3)
     .map(row => ({
@@ -913,8 +921,7 @@ function normalizeRagCitation_(value) {
   return String(value || '')
     .toUpperCase()
     .replace(/20\s*CFR/g, '')
-    .replace(/§/g, '')
-    .replace(/\s+/g, '')
+    .replace(/[^0-9A-Z().-]/g, '')
     .trim();
 }
 
