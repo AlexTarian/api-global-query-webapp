@@ -1606,6 +1606,57 @@ async function previewActiveNodDraft_() {
   };
 }
 
+async function requestNodDraft_(messages) {
+  const { data, error } = await window.globalQuerySupabase.functions.invoke('generate-nod-draft', {
+    body: { messages }
+  });
+
+  if (error) {
+    console.error('NOD draft generation failed:', error);
+    throw error;
+  }
+
+  if (!data?.draftResponse) {
+    throw new Error('Draft generation returned no response text.');
+  }
+
+  return data;
+}
+
+async function generateActiveNodDraft_() {
+  if (!currentNod) {
+    throw new Error('No NOD is loaded.');
+  }
+
+  const deficiencyIndex = currentNod.activeDeficiencyIndex;
+  const deficiency = currentNod.deficiencies?.[deficiencyIndex];
+
+  if (!deficiency) {
+    throw new Error('No deficiency is selected.');
+  }
+
+  const cache = await loadNodRagCache_();
+
+  const payload = buildNodDraftPromptPayload_(currentNod, deficiencyIndex);
+
+  payload.customInstructions = deficiency.customInstructions || '';
+  payload.previousDraft = deficiency.draftResponse || '';
+
+  const messages = buildNodDraftMessages_(payload, cache.promptConfig || {});
+  const result = await requestNodDraft_(messages);
+
+  deficiency.draftResponse = result.draftResponse;
+
+  console.log('Generated NOD draft:', {
+    deficiencyIndex,
+    model: result.model,
+    responseId: result.responseId,
+    draftResponse: result.draftResponse
+  });
+
+  return result;
+}
+
 
 // ==================== RENDER ====================
 
@@ -2142,3 +2193,4 @@ document
 window.initializeNod = initializeNod;
 window.loadTestNod = loadTestNod_;
 window.previewActiveNodDraft = previewActiveNodDraft_;
+window.generateActiveNodDraft = generateActiveNodDraft_;
