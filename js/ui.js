@@ -43,6 +43,13 @@ function formatBoolean_(value) {
   return '—';
 }
 
+function updateModalScrollLock_() {
+  const hasOpenModal = [...document.querySelectorAll('.modal-overlay')]
+    .some(modal => !modal.classList.contains('hidden'));
+
+  document.body.classList.toggle('modal-open', hasOpenModal);
+}
+
 function getErrorMessage_(error) {
   if (!error) return 'Unknown error.';
   if (typeof error === 'string') return error;
