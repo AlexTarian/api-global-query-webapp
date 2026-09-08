@@ -894,6 +894,25 @@ function normalizeRagDeficiencyType_(value) {
     .trim();
 }
 
+function parseRagKeywords_(value) {
+  return String(value || '')
+    .split(/[,;|\n]+/)
+    .map(keyword => normalizeRagText_(keyword))
+    .filter(Boolean);
+}
+
+function matchesRagKeyword_(sourceText, keyword) {
+  const source = normalizeRagText_(sourceText);
+  const target = normalizeRagText_(keyword);
+
+  if (!source || !target) return false;
+
+  return (
+    source === target ||
+    source.includes(target) ||
+    target.includes(source)
+  );
+}
 
 function tokenizeRagText_(value) {
   const stopWords = new Set([
@@ -1036,71 +1055,96 @@ function findSimilarNodDeficiencies_(deficiency, cache) {
 }
 
 function findNodInterpretations_(deficiency, cache) {
-  const queryText = [
-    deficiency.type,
-    deficiency.context,
-    deficiency.modificationRequired,
-    ...(deficiency.citations || [])
-  ].join(' ');
+  const citations = (deficiency.citations || [])
+    .map(normalizeRagCitation_)
+    .filter(Boolean);
 
-  return cache.interpretations
-    .map(row => {
-      const interpretationText = [
-        row.regulation,
-        row.topic,
-        row.summary,
-        row.dol_misreading,
-        row.response_strategy,
-        row.when_to_use,
-        row.related_case_law,
-        row.notes
-      ].join(' ');
+  // Primary: regulatory citation -> Regulation column.
+  const citationMatches = cache.interpretations.filter(row => {
+    const regulation = normalizeRagCitation_(row.regulation);
+    if (!regulation) return false;
 
-      const score = countRagOverlap_(queryText, interpretationText);
+    return citations.some(citation =>
+      citation === regulation ||
+      citation.startsWith(regulation) ||
+      regulation.startsWith(citation)
+    );
+  });
 
-      return {
+  if (citationMatches.length) {
+    return citationMatches
+      .slice(0, 2)
+      .map(row => ({
         ...row,
-        _score: score
-      };
-    })
-    .filter(row => row._score >= 2)
-    .sort((a, b) => b._score - a._score)
+        title: row.topic || row.regulation || 'Interpretation Note',
+        _matchReason: 'citation'
+      }));
+  }
+
+  // Fallback: Deficiency Type -> Topic column.
+  const deficiencyType = normalizeRagDeficiencyType_(deficiency.type);
+  if (!deficiencyType) return [];
+
+  const topicMatches = cache.interpretations.filter(row => {
+    const topic = normalizeRagDeficiencyType_(row.topic);
+    if (!topic) return false;
+
+    return (
+      topic === deficiencyType ||
+      topic.includes(deficiencyType) ||
+      deficiencyType.includes(topic)
+    );
+  });
+
+  return topicMatches
     .slice(0, 2)
     .map(row => ({
       ...row,
-      title: row.topic || row.regulation || 'Interpretation Note'
+      title: row.topic || row.regulation || 'Interpretation Note',
+      _matchReason: 'topic'
     }));
 }
 
 function findNodCaseLaw_(deficiency, cache) {
-  const queryText = [
-    deficiency.type,
-    deficiency.context,
-    deficiency.modificationRequired,
-    ...(deficiency.citations || [])
-  ].join(' ');
+  const deficiencyType = deficiency.type || '';
 
-  return cache.caseLaw
-    .map(row => {
-      const searchableText = [
-        row.case_name,
-        row.keywords,
-        row.takeaway
-      ].join(' ');
+  // Primary: Deficiency Type -> Keywords.
+  const typeMatches = cache.caseLaw.filter(row => {
+    const keywords = parseRagKeywords_(row.keywords);
 
-      const score = countRagOverlap_(queryText, searchableText);
+    return keywords.some(keyword =>
+      matchesRagKeyword_(deficiencyType, keyword)
+    );
+  });
 
-      return {
+  if (typeMatches.length) {
+    return typeMatches
+      .slice(0, 2)
+      .map(row => ({
         ...row,
-        _score: score
-      };
-    })
-    .filter(row => row._score >= 2)
-    .sort((a, b) => b._score - a._score)
+        title: row.case_name || 'Case Law',
+        _matchReason: 'deficiency_type'
+      }));
+  }
+
+  // Fallback: Modification Required -> Keywords.
+  const modificationRequired = deficiency.modificationRequired || '';
+  if (!modificationRequired) return [];
+
+  const modificationMatches = cache.caseLaw.filter(row => {
+    const keywords = parseRagKeywords_(row.keywords);
+
+    return keywords.some(keyword =>
+      matchesRagKeyword_(modificationRequired, keyword)
+    );
+  });
+
+  return modificationMatches
     .slice(0, 2)
     .map(row => ({
       ...row,
-      title: row.case_name || 'Case Law'
+      title: row.case_name || 'Case Law',
+      _matchReason: 'modification_required'
     }));
 }
 
