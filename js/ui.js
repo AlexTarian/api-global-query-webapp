@@ -111,4 +111,4 @@ function initializeTabs() {
   });
 }
 
-window.GlobalQueryUI = { escapeHtml_, formatDate, formatBoolean_, getErrorMessage_, appendKv, populateStateDropdown, initializeTabs };
+window.GlobalQueryUI = { escapeHtml_, formatDate, formatBoolean_, getErrorMessage_, appendKv, populateStateDropdown, initializeTabs, updateModalScrollLock_ };
