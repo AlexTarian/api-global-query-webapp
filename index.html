@@ -696,6 +696,69 @@
     </div>
   </div>
 
+  <!-- ==================== NOD DRAFT INSTRUCTIONS MODAL ==================== -->
+
+  <div id="nodDraftInstructionsModalOverlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="nodDraftInstructionsTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div id="nodDraftInstructionsTitle" class="modal-title">Generate NOD Draft</div>
+          <div id="nodDraftInstructionsSubtitle" class="muted">Add optional case-specific instructions before generating.</div>
+        </div>
+
+        <button id="closeNodDraftInstructionsBtn" class="btn icon" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="field">
+          <span class="label">Optional Instructions</span>
+          <textarea id="nodDraftInstructions" class="nod-large-textarea" placeholder="Add any case-specific context or instructions here..."></textarea>
+        </label>
+
+        <div class="modal-action-row">
+          <button id="cancelNodDraftBtn" class="btn" type="button">Cancel</button>
+          <button id="confirmNodDraftBtn" class="btn primary" type="button">Generate Draft</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================== NOD DRAFT RESULT MODAL ==================== -->
+
+  <div id="nodDraftResultModalOverlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="nodDraftResultTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div id="nodDraftResultTitle" class="modal-title">Draft Response</div>
+          <div id="nodDraftResultSubtitle" class="muted"></div>
+        </div>
+
+        <button id="closeNodDraftResultBtn" class="btn icon" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="field">
+          <span class="label">Draft</span>
+          <textarea id="nodDraftResultText" class="nod-large-textarea"></textarea>
+        </label>
+
+        <div class="modal-action-row">
+          <button id="copyNodDraftBtn" class="btn" type="button">Copy Draft</button>
+        </div>
+
+        <label class="field">
+          <span class="label">Feedback / Revision Instructions</span>
+          <textarea id="nodDraftFeedback" class="nod-large-textarea" placeholder="Tell GlobalQuery what you want changed..."></textarea>
+        </label>
+
+        <div class="modal-action-row">
+          <button id="resubmitNodDraftBtn" class="btn primary" type="button">Resubmit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== JAVASCRIPT ==================== -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
