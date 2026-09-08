@@ -1690,15 +1690,50 @@ async function generateAllNodDrafts_(instructions = '') {
   }));
 }
 
-function buildCombinedNodDraftText_() {
-  return (currentNod?.deficiencies || [])
-    .map((deficiency, index) => {
-      const number = deficiency.number ?? index + 1;
-      const draft = deficiency.draftResponse || '';
+function buildFinalNodLetter_() {
+  const noticeDate = currentNod?.noticeDate
+    ? GlobalQueryUI.formatDate(currentNod.noticeDate)
+    : '[date]';
 
-      return `Deficiency ${number}\n\n${draft}`;
-    })
-    .join('\n\n\n');
+  const deficiencies = Array.isArray(currentNod?.deficiencies)
+    ? currentNod.deficiencies
+    : [];
+
+  const totalCount = deficiencies.length;
+
+  const body = deficiencies.map((deficiency, index) => {
+    const number = deficiency.number ?? index + 1;
+    const draft = normalizeDraftText_(deficiency.draftResponse);
+
+    const heading = totalCount > 1
+      ? `Deficiency ${number}`
+      : '';
+
+    const parts = [];
+
+    if (heading) {
+      parts.push(heading, '');
+    }
+
+    parts.push(
+      draft || `[Response for Deficiency ${number} not generated yet.]`
+    );
+
+    return parts.join('\n');
+  }).join('\n\n');
+
+  return [
+    'Dear Certifying Officer,',
+    '',
+    `The following is a response to the Notice of Deficiency (NOD) sent on ${noticeDate}.`,
+    '',
+    body || '[No deficiency responses generated yet.]',
+    '',
+    'We hope this satisfies your request(s). Should you have any additional questions, please do not hesitate to reach out.',
+    '',
+    'Sincerely,',
+    'The Agri Placements Team'
+  ].join('\n');
 }
 
 function openAllNodDraftResults_() {
@@ -1706,11 +1741,9 @@ function openAllNodDraftResults_() {
   document.getElementById('nodDraftFeedback').closest('.field').hidden = true;
   document.getElementById('resubmitNodDraftBtn').hidden = true;
   
-  document.getElementById('nodDraftResultSubtitle').textContent =
-    `${currentNod.deficiencies.length} deficiencies drafted`;
+  document.getElementById('nodDraftResultSubtitle').textContent = `${currentNod.deficiencies.length} deficiencies drafted`;
 
-  document.getElementById('nodDraftResultText').value =
-    buildCombinedNodDraftText_();
+  document.getElementById('nodDraftResultText').value = buildFinalNodLetter_();
 
   document.getElementById('nodDraftFeedback').value = '';
 
