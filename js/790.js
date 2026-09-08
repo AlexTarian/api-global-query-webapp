@@ -248,7 +248,7 @@ async function load790StateDropdown_() {
 
 function format790Boolean_(value) {
   if (value === 1 || value === '1' || value === true) return '✓';
-  if (value === 0 || value === '0' || value === false) return '✕';
+  if (value === 0 || value === '0' || value === false) return '✗';
   return '—';
 }
 
