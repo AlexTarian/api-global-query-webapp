@@ -1675,20 +1675,13 @@ function openNodDraftInstructions_(mode = 'single') {
       ? 'Generate All NOD Drafts'
       : `Generate Draft — Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}`;
 
-  GlobalQueryUI.openModal_(
-    document.getElementById('nodDraftInstructionsModalOverlay')
-  );
+  document.getElementById('nodDraftInstructionsModalOverlay').classList.remove('hidden');
 }
-
 
 function closeNodDraftInstructions_() {
   pendingNodDraftMode = null;
-
-  GlobalQueryUI.closeModal_(
-    document.getElementById('nodDraftInstructionsModalOverlay')
-  );
+  document.getElementById('nodDraftInstructionsModalOverlay').classList.add('hidden');
 }
-
 
 function openNodDraftResult_(deficiency) {
   if (!deficiency) return;
@@ -1696,16 +1689,21 @@ function openNodDraftResult_(deficiency) {
   document.getElementById('nodDraftResultSubtitle').textContent =
     `Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}: ${deficiency.type || 'Unclassified'}`;
 
-  document.getElementById('nodDraftResultText').value =
-    deficiency.draftResponse || '';
-
+  document.getElementById('nodDraftResultText').value = deficiency.draftResponse || '';
   document.getElementById('nodDraftFeedback').value = '';
 
-  GlobalQueryUI.openModal_(
-    document.getElementById('nodDraftResultModalOverlay')
-  );
+  document.getElementById('nodDraftResultModalOverlay').classList.remove('hidden');
 }
 
+function closeNodDraftResult_() {
+  const deficiency = currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
+
+  if (deficiency) {
+    deficiency.draftResponse = document.getElementById('nodDraftResultText').value;
+  }
+
+  document.getElementById('nodDraftResultModalOverlay').classList.add('hidden');
+}
 
 function closeNodDraftResult_() {
   const deficiency =
