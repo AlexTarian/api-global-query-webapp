@@ -1318,6 +1318,12 @@ function formatNodCitations_(citations) {
 
 // ==================== RAG =======================
 
+function cleanRagCitationText_(value) {
+  return String(value || '')
+    .replace(/�/g, '§')
+    .trim();
+}
+
 function getNodRagItems_(type) {
   const deficiency = currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
 
@@ -1402,7 +1408,7 @@ function renderNodCfrDetail_(item, container) {
 function renderNodSimilarDeficiencyDetail_(item, container) {
   const employer = GlobalQueryUI.escapeHtml_(item.employer || '—');
   const deficiency = GlobalQueryUI.escapeHtml_(item.deficiency_type || item.deficiency_category || '—');
-  const citation = GlobalQueryUI.escapeHtml_(item.applicable_regulatory_citations || '—');
+  const citation = GlobalQueryUI.escapeHtml_(cleanRagCitationText_(item.applicable_regulatory_citations) || '—');
 
   container.insertAdjacentHTML('beforeend', `
     <div class="modal-panel" style="margin-top:16px">
