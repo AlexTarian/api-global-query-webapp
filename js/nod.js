@@ -115,35 +115,76 @@ function looksLikePdf_(bytes) {
 
 function extractPdfPageText_(items) {
   const lines = [];
-  let currentLine = [];
+  let currentLine = '';
   let lastY = null;
+  let lastXEnd = null;
 
   for (const item of items || []) {
     const text = String(item?.str || '');
     if (!text) continue;
 
+    const x = item?.transform?.[4];
     const y = item?.transform?.[5];
+    const width = Number(item?.width) || 0;
 
-    if (
+    const isNewLine =
       lastY !== null &&
       Number.isFinite(y) &&
-      Math.abs(y - lastY) > 2
-    ) {
-      if (currentLine.length) {
-        lines.push(currentLine.join(' '));
-        currentLine = [];
+      Math.abs(y - lastY) > 2;
+
+    if (isNewLine) {
+      if (currentLine.trim()) {
+        lines.push(currentLine.trim());
+      }
+
+      currentLine = '';
+      lastXEnd = null;
+    }
+
+    if (!currentLine) {
+      currentLine = text;
+    } else {
+      const gap =
+        Number.isFinite(x) && Number.isFinite(lastXEnd)
+          ? x - lastXEnd
+          : null;
+
+      const fragmentsTouch =
+        gap !== null &&
+        gap <= 1.5;
+
+      if (
+        fragmentsTouch ||
+        currentLine.endsWith(' ') ||
+        text.startsWith(' ')
+      ) {
+        currentLine += text;
+      } else {
+        currentLine += ` ${text}`;
       }
     }
 
-    currentLine.push(text);
+    if (Number.isFinite(x)) {
+      lastXEnd = x + width;
+    }
 
     if (Number.isFinite(y)) {
       lastY = y;
     }
+
+    if (item.hasEOL) {
+      if (currentLine.trim()) {
+        lines.push(currentLine.trim());
+      }
+
+      currentLine = '';
+      lastXEnd = null;
+      lastY = null;
+    }
   }
 
-  if (currentLine.length) {
-    lines.push(currentLine.join(' '));
+  if (currentLine.trim()) {
+    lines.push(currentLine.trim());
   }
 
   return lines.join('\n');
