@@ -1434,24 +1434,60 @@ function renderNodSimilarDeficiencyDetail_(item, container) {
 }
 
 function renderNodInterpretationDetail_(item, container) {
-  GlobalQueryUI.appendKv(container, [
-    ['Regulation', GlobalQueryUI.escapeHtml_(item.regulation || '—')],
-    ['Topic', GlobalQueryUI.escapeHtml_(item.topic || '—')],
-    ['Summary', GlobalQueryUI.escapeHtml_(item.summary || '—')],
-    ['DOL Misreading', GlobalQueryUI.escapeHtml_(item.dol_misreading || '—')],
-    ['Response Strategy', GlobalQueryUI.escapeHtml_(item.response_strategy || '—')],
-    ['When to Use', GlobalQueryUI.escapeHtml_(item.when_to_use || '—')],
-    ['Related Case Law', GlobalQueryUI.escapeHtml_(item.related_case_law || '—')],
-    ['Notes', GlobalQueryUI.escapeHtml_(item.notes || '—')]
-  ]);
+  const regulation = GlobalQueryUI.escapeHtml_(item.regulation || '—');
+  const topic = GlobalQueryUI.escapeHtml_(item.topic || '—');
+  const summary = GlobalQueryUI.escapeHtml_(item.summary || '—');
+
+  container.insertAdjacentHTML('beforeend', `
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Summary</h4>
+      <div class="nod-deficiency-text">${regulation} • ${topic}: ${summary}</div>
+    </div>
+  
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>DOL Misreading</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.dol_misreading || '—')}</div>
+    </div>
+
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Response Strategy</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.response_strategy || '—')}</div>
+    </div>
+
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>When to Use</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.when_to_use || '—')}</div>
+    </div>
+
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Related Case Law</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.related_case_law || '—')}</div>
+    </div>
+
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Notes</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.notes || '—')}</div>
+    </div>
+  `);
 }
 
 function renderNodCaseLawDetail_(item, container) {
-  GlobalQueryUI.appendKv(container, [
-    ['Case Name', GlobalQueryUI.escapeHtml_(item.case_name || '—')],
-    ['Keywords', GlobalQueryUI.escapeHtml_(item.keywords || '—')],
-    ['Takeaway', GlobalQueryUI.escapeHtml_(item.takeaway || '—')]
-  ]);
+  container.insertAdjacentHTML('beforeend', `
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Case Name</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.case_name || '—')}</div>
+    </div>
+
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Keywords</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.keywords || '—')}</div>
+    </div>
+
+    <div class="modal-panel" style="margin-top:16px">
+      <h4>Takeaway</h4>
+      <div class="nod-deficiency-text">${GlobalQueryUI.escapeHtml_(item.takeaway || '—')}</div>
+    </div>
+  `);
 }
 
 
