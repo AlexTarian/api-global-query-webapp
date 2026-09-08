@@ -1517,6 +1517,7 @@ Rules:
 - If support is limited, write carefully and conservatively.
 - If an attachment is needed, mention it in a complete sentence and explain why it addresses the issue.
 - Do not write a greeting, closing, signature block, or a full multi-deficiency letter.
+- Do not add a heading, title, deficiency number, or deficiency label. Begin directly with the substantive response paragraph.
 - Return only the response text for this one deficiency.
 `.trim();
 
