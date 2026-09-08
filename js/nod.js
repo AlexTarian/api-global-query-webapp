@@ -1726,13 +1726,18 @@ function closeNodDraftResult_() {
 
 function renderNodWorkspace_() {
   const workspace = document.getElementById('nodWorkspace');
+  const hasNod = !!currentNod?.file;
+  const hasDeficiencies = !!currentNod?.deficiencies?.length;
 
-  if (!currentNod?.file) {
+  if (!hasNod) {
     workspace.hidden = true;
     return;
   }
 
   workspace.hidden = false;
+  document.getElementById('draftSingleNodBtn').disabled = !hasDeficiencies;
+  document.getElementById('draftAllNodBtn').disabled = !hasDeficiencies;
+  document.getElementById('refreshNodRagBtn').disabled = !hasDeficiencies;
 
   renderNodNoticeInfo_();
   renderNodDeficiencySelector_();
