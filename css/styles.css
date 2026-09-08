@@ -909,6 +909,12 @@
   gap: 9px;
 }
 
+.nod-rag-item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .nod-deficiency-select,
 .nod-rag-item {
   width: 100%;
