@@ -4,7 +4,7 @@ let nodInitialized = false;
 let nodRagCache = null;
 let nodRagLoadingPromise = null;
 let pendingNodDraftMode = null;
-
+let nodDraftResultMode = null;
 
 // ==================== STATE ====================
 
@@ -1658,6 +1658,69 @@ async function generateActiveNodDraft_() {
   return result;
 }
 
+async function generateAllNodDrafts_(instructions = '') {
+  if (!currentNod?.deficiencies?.length) {
+    throw new Error('No deficiencies are available to draft.');
+  }
+
+  const originalIndex = currentNod.activeDeficiencyIndex;
+
+  try {
+    for (let index = 0; index < currentNod.deficiencies.length; index++) {
+      currentNod.activeDeficiencyIndex = index;
+
+      const deficiency = currentNod.deficiencies[index];
+
+      deficiency.customInstructions = instructions;
+      deficiency.draftResponse = '';
+
+      console.log(`Generating NOD draft ${index + 1} of ${currentNod.deficiencies.length}...`);
+
+      await generateActiveNodDraft_();
+    }
+
+  } finally {
+    currentNod.activeDeficiencyIndex = originalIndex;
+  }
+
+  return currentNod.deficiencies.map(deficiency => ({
+    number: deficiency.number,
+    type: deficiency.type,
+    draftResponse: deficiency.draftResponse
+  }));
+}
+
+function buildCombinedNodDraftText_() {
+  return (currentNod?.deficiencies || [])
+    .map((deficiency, index) => {
+      const number = deficiency.number ?? index + 1;
+      const draft = deficiency.draftResponse || '';
+
+      return `Deficiency ${number}\n\n${draft}`;
+    })
+    .join('\n\n\n');
+}
+
+function openAllNodDraftResults_() {
+  nodDraftResultMode = 'all';
+  document.getElementById('nodDraftFeedback').closest('.field').hidden = true;
+  document.getElementById('resubmitNodDraftBtn').hidden = true;
+  
+  document.getElementById('nodDraftResultSubtitle').textContent =
+    `${currentNod.deficiencies.length} deficiencies drafted`;
+
+  document.getElementById('nodDraftResultText').value =
+    buildCombinedNodDraftText_();
+
+  document.getElementById('nodDraftFeedback').value = '';
+
+  document.getElementById('nodDraftResultModalOverlay').classList.remove('hidden');
+
+  if (typeof GlobalQueryUI.updateModalScrollLock_ === 'function') {
+    GlobalQueryUI.updateModalScrollLock_();
+  }
+}
+
 
 // ==================== DRAFT CREATOR ============
 
@@ -1676,16 +1739,29 @@ function openNodDraftInstructions_(mode = 'single') {
       : `Generate Draft — Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}`;
 
   document.getElementById('nodDraftInstructionsModalOverlay').classList.remove('hidden');
+
+  if (typeof GlobalQueryUI.updateModalScrollLock_ === 'function') {
+    GlobalQueryUI.updateModalScrollLock_();
+  }
 }
 
 function closeNodDraftInstructions_() {
   pendingNodDraftMode = null;
+
   document.getElementById('nodDraftInstructionsModalOverlay').classList.add('hidden');
+
+  if (typeof GlobalQueryUI.updateModalScrollLock_ === 'function') {
+    GlobalQueryUI.updateModalScrollLock_();
+  }
 }
 
 function openNodDraftResult_(deficiency) {
+  nodDraftResultMode = 'single';
   if (!deficiency) return;
 
+  document.getElementById('nodDraftFeedback').closest('.field').hidden = false;
+  document.getElementById('resubmitNodDraftBtn').hidden = false;
+  
   document.getElementById('nodDraftResultSubtitle').textContent =
     `Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}: ${deficiency.type || 'Unclassified'}`;
 
@@ -1693,6 +1769,9 @@ function openNodDraftResult_(deficiency) {
   document.getElementById('nodDraftFeedback').value = '';
 
   document.getElementById('nodDraftResultModalOverlay').classList.remove('hidden');
+  if (typeof GlobalQueryUI.updateModalScrollLock_ === 'function') {
+    GlobalQueryUI.updateModalScrollLock_();
+  }
 }
 
 function closeNodDraftResult_() {
@@ -1703,20 +1782,10 @@ function closeNodDraftResult_() {
   }
 
   document.getElementById('nodDraftResultModalOverlay').classList.add('hidden');
-}
 
-function closeNodDraftResult_() {
-  const deficiency =
-    currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
-
-  if (deficiency) {
-    deficiency.draftResponse =
-      document.getElementById('nodDraftResultText').value;
+  if (typeof GlobalQueryUI.updateModalScrollLock_ === 'function') {
+    GlobalQueryUI.updateModalScrollLock_();
   }
-
-  GlobalQueryUI.closeModal_(
-    document.getElementById('nodDraftResultModalOverlay')
-  );
 }
 
 
@@ -2210,27 +2279,34 @@ function bindNodEvents_() {
   document.getElementById('closeNodDraftResultBtn').addEventListener('click', closeNodDraftResult_);
 
   document.getElementById('confirmNodDraftBtn').addEventListener('click', async () => {
-    if (pendingNodDraftMode !== 'single') return;
-
-    const deficiency =
-      currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
-
-    if (!deficiency) return;
+    const mode = pendingNodDraftMode;
+    if (!mode) return;
 
     const button = document.getElementById('confirmNodDraftBtn');
     const instructions = document.getElementById('nodDraftInstructions').value.trim();
 
-    deficiency.customInstructions = instructions;
-
     button.disabled = true;
-    button.textContent = 'Generating…';
+    button.textContent = mode === 'all'
+      ? 'Generating All…'
+      : 'Generating…';
 
     try {
       closeNodDraftInstructions_();
 
-      await generateActiveNodDraft_();
+      if (mode === 'single') {
+        const deficiency = currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
 
-      openNodDraftResult_(deficiency);
+        if (!deficiency) return;
+
+        deficiency.customInstructions = instructions;
+
+        await generateActiveNodDraft_();
+        openNodDraftResult_(deficiency);
+
+      } else if (mode === 'all') {
+        await generateAllNodDrafts_(instructions);
+        openAllNodDraftResults_();
+      }
 
     } catch (error) {
       console.error('Could not generate NOD draft:', error);
@@ -2272,8 +2348,12 @@ function bindNodEvents_() {
   });
 
   document.getElementById('resubmitNodDraftBtn').addEventListener('click', async () => {
+    if (nodDraftResultMode === 'all') {
+      alert('To revise an individual response, select that deficiency and use Draft Single.');
+      return;
+    }
+    
     const deficiency = currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
-
     if (!deficiency) return;
 
     const button = document.getElementById('resubmitNodDraftBtn');
