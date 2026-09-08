@@ -1323,6 +1323,12 @@ function buildEmployerContextForNodDeficiency_(caseData = {}, deficiencyType = '
 
 // ==================== DRAFT PAYLOAD ====================
 
+function cleanRagText_(value) {
+  return String(value || '')
+    .replace(/�/g, '§')
+    .trim();
+}
+
 function trimDraftText_(text, maxChars = 1800) {
   const normalized = normalizeDraftText_(text);
 
