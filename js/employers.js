@@ -253,6 +253,7 @@ async function openEmployerDetail_(fein) {
     '<div class="muted">Loading filing history...</div>';
 
   modal.classList.remove('hidden');
+  GlobalQueryUI.updateModalScrollLock_();
 
   try {
     const history = await loadEmployerCaseHistory_(fein);
