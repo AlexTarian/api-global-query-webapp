@@ -44,6 +44,10 @@
     color: var(--text);
   }
 
+  body.modal-open {
+    overflow: hidden;
+  }
+
   button, input, select { font: inherit; }
   button { cursor: pointer; }
 
@@ -1053,6 +1057,8 @@
     padding: 20px;
     z-index: 100;
     backdrop-filter: blur(5px);
+    overflow-y: auto;
+    overscroll-behavior: contain;  
   }
   .modal-overlay.hidden { display: none; }
   .modal {
