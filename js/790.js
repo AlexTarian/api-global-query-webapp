@@ -300,6 +300,7 @@ function open790Modal_(row) {
   jobDescription.textContent = row.desc || '—';
 
   modal.classList.remove('hidden');
+  GlobalQueryUI.updateModalScrollLock_();
 }
 
 // ==================== EVENTS ====================
