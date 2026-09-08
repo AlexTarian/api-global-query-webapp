@@ -246,6 +246,12 @@ async function load790StateDropdown_() {
 
 // ==================== Modal ====================
 
+function format790Boolean_(value) {
+  if (value === 1 || value === '1' || value === true) return '✓';
+  if (value === 0 || value === '0' || value === false) return '✕';
+  return '—';
+}
+
 function open790Modal_(row) {
   if (!row) return;
 
@@ -286,8 +292,8 @@ function open790Modal_(row) {
     ['Job Title', GlobalQueryUI.escapeHtml_(row.jobTitle || '—')],
     ['Period of Need', `${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}`],
     ['Workers', GlobalQueryUI.escapeHtml_(row.workers ?? '—')],
-    ['Cert Req', GlobalQueryUI.escapeHtml_(row.cert || '—')],
-    ['Drive Req', GlobalQueryUI.escapeHtml_(row.drive || '—')],
+    ['Cert Req', format790Boolean_(row.cert)],
+    ['Drive Req', format790Boolean_(row.drive)],
     ['State', GlobalQueryUI.escapeHtml_(row.state || '—')]
   ]);
 
