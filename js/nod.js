@@ -1140,6 +1140,423 @@ async function loadRagForAllDeficiencies_() {
   }
 }
 
+
+// ==================== DRAFT CONTEXT ====================
+
+function normalizeDraftText_(value) {
+  if (value == null) return '';
+  return String(value).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+}
+
+function removeEmptyDraftFields_(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => {
+      if (value == null) return false;
+      if (typeof value === 'string' && !value.trim()) return false;
+      return true;
+    })
+  );
+}
+
+function getLastDraftContextParagraph_(context = '') {
+  const normalized = normalizeDraftText_(context);
+  if (!normalized) return '';
+
+  const paragraphs = normalized
+    .split(/\n\s*\n/)
+    .map(paragraph => paragraph.trim())
+    .filter(Boolean);
+
+  return paragraphs.length
+    ? paragraphs[paragraphs.length - 1]
+    : normalized;
+}
+
+function buildCaseIssueText_(deficiencyType = '', context = '', modificationRequired = '') {
+  return [
+    normalizeDraftText_(deficiencyType),
+    getLastDraftContextParagraph_(context),
+    normalizeDraftText_(modificationRequired)
+  ].filter(Boolean).join('\n\n');
+}
+
+const DRAFT_FEIN_TERMS = new Set(['fein']);
+const DRAFT_MEAL_TERMS = new Set(['meal', 'meals']);
+const DRAFT_HOUSING_TERMS = new Set(['housing', 'lodging']);
+
+const DRAFT_REQUIREMENT_TERMS = new Set([
+  'requirement', 'requirements',
+  'qualification', 'qualifications',
+  'driving', 'driver', 'drive', 'cdl'
+]);
+
+const DRAFT_WAGE_TERMS = new Set([
+  'wage', 'wages', 'aewr',
+  'piece rate', 'hourly', 'salary', 'pay rate'
+]);
+
+const DRAFT_TRANSPORTATION_TERMS = new Set([
+  'transportation', 'subsistence', 'inbound', 'outbound'
+]);
+
+const DRAFT_WORKSITE_TERMS = new Set([
+  'worksite', 'worksites', 'work sites',
+  'place of employment', 'county'
+]);
+
+const DRAFT_JOB_SUPPORT_TERMS = new Set([
+  'temporary need', 'seasonality',
+  'temporary or seasonal need',
+  'temporary', 'seasonal',
+  'agricultural', 'nature of the job'
+]);
+
+const DRAFT_JOB_DUTIES_TERMS = new Set([
+  'job duties', 'job duty', 'job description'
+]);
+
+function hasAnyDraftTerm_(searchable, terms) {
+  for (const term of terms) {
+    if (searchable.includes(term)) return true;
+  }
+
+  return false;
+}
+
+function getDraftDeficiencyFlags_(deficiencyType = '', issueText = '') {
+  const searchable =
+    `${normalizeDraftText_(deficiencyType)} ${normalizeDraftText_(issueText)}`
+      .toLowerCase();
+
+  return {
+    includeJobSupport: hasAnyDraftTerm_(searchable, DRAFT_JOB_SUPPORT_TERMS),
+    includeJobDuties: hasAnyDraftTerm_(searchable, DRAFT_JOB_DUTIES_TERMS),
+    includeFein: hasAnyDraftTerm_(searchable, DRAFT_FEIN_TERMS),
+    includeWage: hasAnyDraftTerm_(searchable, DRAFT_WAGE_TERMS),
+    includeRequirements: hasAnyDraftTerm_(searchable, DRAFT_REQUIREMENT_TERMS),
+    includeWorksite: hasAnyDraftTerm_(searchable, DRAFT_WORKSITE_TERMS),
+    includeHousing: hasAnyDraftTerm_(searchable, DRAFT_HOUSING_TERMS),
+    includeMeals: hasAnyDraftTerm_(searchable, DRAFT_MEAL_TERMS),
+    includeTransportation: hasAnyDraftTerm_(searchable, DRAFT_TRANSPORTATION_TERMS)
+  };
+}
+
+function normalizeNodEmployerDataForDraft_(caseData = {}) {
+  if (!caseData) return {};
+
+  const start = caseData.start || '';
+  const end = caseData.end || '';
+
+  return removeEmptyDraftFields_({
+    caseNumber: currentNod?.caseNumber || caseData.caseNum || '',
+    businessName: caseData.employer || currentNod?.employerName || '',
+    fein: caseData.fein || '',
+
+    jobTitle: caseData.jobTitle || caseData.jobType || '',
+    jobDescription: caseData.desc || '',
+    workersRequested: caseData.workers ?? '',
+
+    periodOfNeedStart: start,
+    periodOfNeedEnd: end,
+    periodOfNeedLabel:
+      start || end
+        ? `${GlobalQueryUI.formatDate(start)} – ${GlobalQueryUI.formatDate(end)}`
+        : '',
+
+    certificationRequired: normalizeDraftBoolean_(caseData.cert),
+    drivingRequired: normalizeDraftBoolean_(caseData.drive),
+
+    worksiteAddress: caseData.address || '',
+
+    isH2ALC: normalizeDraftBoolean_(caseData.h2alc)
+  });
+}
+
+function normalizeDraftBoolean_(value) {
+  if (value === true || value === 1 || value === '1') return true;
+  if (value === false || value === 0 || value === '0') return false;
+  return undefined;
+}
+
+function buildEmployerContextForNodDeficiency_(caseData = {}, deficiencyType = '', issueText = '') {
+  const employerData = normalizeNodEmployerDataForDraft_(caseData);
+  const flags = getDraftDeficiencyFlags_(deficiencyType, issueText);
+
+  const context = {
+    caseNumber: employerData.caseNumber,
+    businessName: employerData.businessName,
+    isH2ALC: employerData.isH2ALC
+  };
+
+  if (flags.includeJobSupport) {
+    Object.assign(context, {
+      jobTitle: employerData.jobTitle,
+      workersRequested: employerData.workersRequested,
+      periodOfNeedStart: employerData.periodOfNeedStart,
+      periodOfNeedEnd: employerData.periodOfNeedEnd,
+      periodOfNeedLabel: employerData.periodOfNeedLabel
+    });
+
+    if (flags.includeJobDuties) {
+      context.jobDescription = employerData.jobDescription;
+    }
+  }
+
+  if (flags.includeFein) {
+    context.fein = employerData.fein;
+  }
+
+  if (flags.includeRequirements) {
+    Object.assign(context, {
+      certificationRequired: employerData.certificationRequired,
+      drivingRequired: employerData.drivingRequired
+    });
+  }
+
+  if (flags.includeWorksite) {
+    context.worksiteAddress = employerData.worksiteAddress;
+  }
+
+  return removeEmptyDraftFields_(context);
+}
+
+
+// ==================== DRAFT PAYLOAD ====================
+
+function trimDraftText_(text, maxChars = 1800) {
+  const normalized = normalizeDraftText_(text);
+
+  if (normalized.length <= maxChars) return normalized;
+
+  return `${normalized.slice(0, maxChars - 3).trimEnd()}...`;
+}
+
+function getLastDraftParagraphs_(text, maxParagraphs = 2) {
+  const normalized = normalizeDraftText_(text);
+  if (!normalized) return '';
+
+  const paragraphs = normalized
+    .split(/\n\s*\n/)
+    .map(paragraph => paragraph.trim())
+    .filter(Boolean);
+
+  return paragraphs.slice(-maxParagraphs).join('\n\n');
+}
+
+function compressNodCfrResult_(item) {
+  return {
+    citation: cleanRagText_(item?.regulation_number || ''),
+    summary: cleanRagText_(item?.summary || ''),
+    text: trimDraftText_(cleanRagText_(item?.text || ''), 1500)
+  };
+}
+
+function compressNodHistoricalExample_(item) {
+  return {
+    caseNumber: item?.case_number || '',
+    employer: item?.employer || '',
+    deficiencyType:
+      item?.deficiency_type ||
+      item?.deficiency_category ||
+      '',
+    citations: cleanRagText_(item?.applicable_regulatory_citations || ''),
+    context: getLastDraftParagraphs_(cleanRagText_(item?.context || ''), 2),
+    responseParagraph: cleanRagText_(item?.response_paragraph || ''),
+    attachmentsNeeded: cleanRagText_(item?.attachments_needed || ''),
+    outcome: cleanRagText_(item?.outcome_reviewer_note || '')
+  };
+}
+
+function compressNodInterpretation_(item) {
+  return {
+    topic: cleanRagText_(item?.topic || ''),
+    citation: cleanRagText_(item?.regulation || ''),
+    plainEnglish: cleanRagText_(item?.summary || ''),
+    dolMisreading: cleanRagText_(item?.dol_misreading || ''),
+    strategy: cleanRagText_(item?.response_strategy || ''),
+    whenToUse: cleanRagText_(item?.when_to_use || ''),
+    relatedCaseLaw: cleanRagText_(item?.related_case_law || ''),
+    notes: cleanRagText_(item?.notes || '')
+  };
+}
+
+function compressNodCaseLaw_(item) {
+  return {
+    caseName: cleanRagText_(item?.case_name || ''),
+    keywords: cleanRagText_(item?.keywords || ''),
+    takeaway: cleanRagText_(item?.takeaway || '')
+  };
+}
+
+function buildNodDraftPromptPayload_(record, deficiencyIndex) {
+  const deficiency = record?.deficiencies?.[deficiencyIndex];
+
+  if (!deficiency) {
+    throw new Error(`Deficiency index not found: ${deficiencyIndex}`);
+  }
+
+  const rag = deficiency.rag || {};
+
+  const issueText = buildCaseIssueText_(
+    deficiency.type || '',
+    deficiency.context || '',
+    deficiency.modificationRequired || ''
+  );
+
+  const employerData = buildEmployerContextForNodDeficiency_(
+    record.caseData || {},
+    deficiency.type || '',
+    issueText
+  );
+
+  return {
+    notice: {
+      caseNumber: record.caseNumber || '',
+      employerName: record.employerName || ''
+    },
+
+    deficiency: {
+      number: deficiency.number ?? '',
+      type: deficiency.type || '',
+      citations: Array.isArray(deficiency.citations)
+        ? deficiency.citations
+        : [],
+      context: normalizeDraftText_(deficiency.context || ''),
+      modificationRequired: normalizeDraftText_(
+        deficiency.modificationRequired || ''
+      )
+    },
+
+    employerData,
+
+    supportingRag: {
+      cfrResults: (rag.cfrResults || [])
+        .slice(0, 3)
+        .map(compressNodCfrResult_),
+
+      historicalExamples: (rag.similarDeficiencies || [])
+        .slice(0, 2)
+        .map(compressNodHistoricalExample_),
+
+      interpretationNotes: (rag.interpretationResults || [])
+        .slice(0, 2)
+        .map(compressNodInterpretation_),
+
+      caseLaw: (rag.caseLawResults || [])
+        .slice(0, 3)
+        .map(compressNodCaseLaw_)
+    }
+  };
+}
+
+const DEFAULT_NOD_SYSTEM_MESSAGE = `
+You are assisting with drafting a response to a single H-2A Notice of Deficiency item.
+
+Your job is to draft one polished response section for one deficiency using the provided materials.
+
+Rules:
+- Write in a polished, professional tone suitable for correspondence with the Department of Labor.
+- Refer to the employer by either "Employer" or by its business name.
+- When referring to the Notice of Deficiency, abbreviate it to "NOD".
+- Address only the single deficiency provided.
+- Use the deficiency context as the starting point, but verify it against any employer data and supporting RAG materials.
+- Treat CFR, interpretation notes, and case law as support, not as text to copy mechanically.
+- Treat historical examples as substance/examples, not style templates.
+- Do not invent employer facts, documents, or legal arguments.
+- If support is limited, write carefully and conservatively.
+- If an attachment is needed, mention it in a complete sentence and explain why it addresses the issue.
+- Do not write a greeting, closing, signature block, or a full multi-deficiency letter.
+- Return only the response text for this one deficiency.
+`.trim();
+
+function buildNodDraftMessages_(payload, promptConfig = {}) {
+  const systemMessage =
+    normalizeDraftText_(promptConfig.nodSystemMessage) ||
+    DEFAULT_NOD_SYSTEM_MESSAGE;
+
+  const customInstructions =
+    normalizeDraftText_(payload?.customInstructions);
+
+  const previousDraft =
+    normalizeDraftText_(payload?.previousDraft);
+
+  const {
+    customInstructions: _customInstructions,
+    previousDraft: _previousDraft,
+    ...packetPayload
+  } = payload || {};
+
+  const previousDraftBlock = previousDraft
+    ? `
+
+PREVIOUS DRAFT TO REVISE:
+${previousDraft}
+
+If analyst guidance is provided, revise the previous draft according to that guidance while preserving useful language.`
+    : '';
+
+  const customBlock = customInstructions
+    ? `
+
+CASE-SPECIFIC USER GUIDANCE:
+${customInstructions}
+
+Use this guidance if relevant, but do not follow it if it conflicts with the system rules or provided facts.`
+    : '';
+
+  const userMessage = `Draft a response for the following H-2A deficiency.
+
+PACKET:
+${JSON.stringify(packetPayload, null, 2)}${previousDraftBlock}${customBlock}`;
+
+  return [
+    {
+      role: 'system',
+      content: systemMessage
+    },
+    {
+      role: 'user',
+      content: userMessage
+    }
+  ];
+}
+
+async function previewActiveNodDraft_() {
+  if (!currentNod) {
+    console.warn('No NOD is currently loaded.');
+    return null;
+  }
+
+  const deficiencyIndex = currentNod.activeDeficiencyIndex;
+
+  if (!currentNod.deficiencies?.[deficiencyIndex]) {
+    console.warn('No active deficiency is selected.');
+    return null;
+  }
+
+  const cache = await loadNodRagCache_();
+
+  const payload = buildNodDraftPromptPayload_(
+    currentNod,
+    deficiencyIndex
+  );
+
+  const messages = buildNodDraftMessages_(
+    payload,
+    cache.promptConfig || {}
+  );
+
+  console.log('NOD draft payload:', payload);
+  console.log('NOD draft messages:', messages);
+
+  return {
+    deficiencyIndex,
+    payload,
+    messages
+  };
+}
+
+
 // ==================== RENDER ====================
 
 function renderNodWorkspace_() {
@@ -1674,3 +2091,4 @@ document
 
 window.initializeNod = initializeNod;
 window.loadTestNod = loadTestNod_;
+window.previewActiveNodDraft = previewActiveNodDraft_;
