@@ -3,6 +3,7 @@ let currentNod = null;
 let nodInitialized = false;
 let nodRagCache = null;
 let nodRagLoadingPromise = null;
+let pendingNodDraftMode = null;
 
 
 // ==================== STATE ====================
@@ -1658,6 +1659,69 @@ async function generateActiveNodDraft_() {
 }
 
 
+// ==================== DRAFT CREATOR ============
+
+function openNodDraftInstructions_(mode = 'single') {
+  pendingNodDraftMode = mode;
+
+  const deficiency = currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
+  if (!deficiency) return;
+
+  document.getElementById('nodDraftInstructions').value =
+    deficiency.customInstructions || '';
+
+  document.getElementById('nodDraftInstructionsTitle').textContent =
+    mode === 'all'
+      ? 'Generate All NOD Drafts'
+      : `Generate Draft — Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}`;
+
+  GlobalQueryUI.openModal_(
+    document.getElementById('nodDraftInstructionsModalOverlay')
+  );
+}
+
+
+function closeNodDraftInstructions_() {
+  pendingNodDraftMode = null;
+
+  GlobalQueryUI.closeModal_(
+    document.getElementById('nodDraftInstructionsModalOverlay')
+  );
+}
+
+
+function openNodDraftResult_(deficiency) {
+  if (!deficiency) return;
+
+  document.getElementById('nodDraftResultSubtitle').textContent =
+    `Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}: ${deficiency.type || 'Unclassified'}`;
+
+  document.getElementById('nodDraftResultText').value =
+    deficiency.draftResponse || '';
+
+  document.getElementById('nodDraftFeedback').value = '';
+
+  GlobalQueryUI.openModal_(
+    document.getElementById('nodDraftResultModalOverlay')
+  );
+}
+
+
+function closeNodDraftResult_() {
+  const deficiency =
+    currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
+
+  if (deficiency) {
+    deficiency.draftResponse =
+      document.getElementById('nodDraftResultText').value;
+  }
+
+  GlobalQueryUI.closeModal_(
+    document.getElementById('nodDraftResultModalOverlay')
+  );
+}
+
+
 // ==================== RENDER ====================
 
 function renderNodWorkspace_() {
@@ -2050,8 +2114,6 @@ function renderNodCaseLawDetail_(item, container) {
 }
 
 
-
-
 // ==================== EVENTS ====================
 
 function bindNodEvents_() {
@@ -2128,6 +2190,118 @@ function bindNodEvents_() {
   document.getElementById('nodRagModalOverlay').addEventListener('click', event => {
     if (event.target === event.currentTarget) {
       event.currentTarget.classList.add('hidden');
+    }
+  });
+
+  document.getElementById('draftSingleNodBtn').addEventListener('click', () => {
+    openNodDraftInstructions_('single');
+  });
+
+  document.getElementById('draftAllNodBtn').addEventListener('click', () => {
+    openNodDraftInstructions_('all');
+  });
+
+  document.getElementById('cancelNodDraftBtn').addEventListener('click', closeNodDraftInstructions_);
+  document.getElementById('closeNodDraftInstructionsBtn').addEventListener('click', closeNodDraftInstructions_);
+
+  document.getElementById('closeNodDraftResultBtn').addEventListener('click', closeNodDraftResult_);
+
+  document.getElementById('confirmNodDraftBtn').addEventListener('click', async () => {
+    if (pendingNodDraftMode !== 'single') return;
+
+    const deficiency =
+      currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
+
+    if (!deficiency) return;
+
+    const button = document.getElementById('confirmNodDraftBtn');
+    const instructions = document.getElementById('nodDraftInstructions').value.trim();
+
+    deficiency.customInstructions = instructions;
+
+    button.disabled = true;
+    button.textContent = 'Generating…';
+
+    try {
+      closeNodDraftInstructions_();
+
+      await generateActiveNodDraft_();
+
+      openNodDraftResult_(deficiency);
+
+    } catch (error) {
+      console.error('Could not generate NOD draft:', error);
+      alert('GlobalQuery could not generate the draft. Please try again.');
+
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Generate Draft';
+    }
+  });
+
+  document.getElementById('copyNodDraftBtn').addEventListener('click', async () => {
+    const textarea = document.getElementById('nodDraftResultText');
+    const button = document.getElementById('copyNodDraftBtn');
+
+    try {
+      await navigator.clipboard.writeText(textarea.value);
+
+      const originalText = button.textContent;
+      button.textContent = 'Copied';
+
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 1200);
+
+    } catch (error) {
+      console.error('Could not copy NOD draft:', error);
+      textarea.select();
+    }
+  });
+
+  document.getElementById('nodDraftResultText').addEventListener('input', event => {
+    const deficiency =
+      currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
+
+    if (!deficiency) return;
+
+    deficiency.draftResponse = event.target.value;
+  });
+
+  document.getElementById('resubmitNodDraftBtn').addEventListener('click', async () => {
+    const deficiency = currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
+
+    if (!deficiency) return;
+
+    const button = document.getElementById('resubmitNodDraftBtn');
+    const draftText = document.getElementById('nodDraftResultText').value.trim();
+    const feedback = document.getElementById('nodDraftFeedback').value.trim();
+
+    if (!feedback) {
+      alert('Enter revision instructions before resubmitting.');
+      return;
+    }
+
+    deficiency.draftResponse = draftText;
+    deficiency.customInstructions = feedback;
+
+    button.disabled = true;
+    button.textContent = 'Revising…';
+
+    try {
+      await generateActiveNodDraft_();
+
+      document.getElementById('nodDraftResultText').value = deficiency.draftResponse || '';
+
+      document.getElementById('nodDraftFeedback').value = '';
+
+    } catch (error) {
+      console.error('Could not revise NOD draft:', error);
+      alert('GlobalQuery could not revise the draft. Please try again.');
+
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Resubmit';
     }
   });
   
