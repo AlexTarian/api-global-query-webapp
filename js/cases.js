@@ -336,6 +336,7 @@ function openCaseModal(caseRow, mode = 'case') {
   }
 
   modal.classList.remove('hidden');
+  GlobalQueryUI.updateModalScrollLock_();
 }
 
 function getJotformUrl_(caseRow) {
