@@ -1822,6 +1822,23 @@ function closeNodDraftResult_() {
   }
 }
 
+function showNodDraftLoading_(message = 'Generating draft…') {
+  document.getElementById('nodDraftLoadingText').textContent = message;
+  document.getElementById('nodDraftLoadingOverlay').classList.remove('hidden');
+
+  if (typeof GlobalQueryUI.updateModalScrollLock_ === 'function') {
+    GlobalQueryUI.updateModalScrollLock_();
+  }
+}
+
+function hideNodDraftLoading_() {
+  document.getElementById('nodDraftLoadingOverlay').classList.add('hidden');
+
+  if (typeof GlobalQueryUI.updateModalScrollLock_ === 'function') {
+    GlobalQueryUI.updateModalScrollLock_();
+  }
+}
+
 
 // ==================== RENDER ====================
 
@@ -2329,15 +2346,19 @@ function bindNodEvents_() {
 
       if (mode === 'single') {
         const deficiency = currentNod?.deficiencies?.[currentNod.activeDeficiencyIndex];
-
         if (!deficiency) return;
 
         deficiency.customInstructions = instructions;
+
+        showNodDraftLoading_(
+          `Generating Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}…`
+        );
 
         await generateActiveNodDraft_();
         openNodDraftResult_(deficiency);
 
       } else if (mode === 'all') {
+        showNodDraftLoading_('Generating all deficiency responses…');
         await generateAllNodDrafts_(instructions);
         openAllNodDraftResults_();
       }
