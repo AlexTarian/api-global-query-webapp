@@ -489,17 +489,17 @@
 
 #employersTable th:nth-child(2),
 #employersTable td:nth-child(2) {
-  width: 15%;
+  width: 10%;
 }
 
 #employersTable th:nth-child(3),
 #employersTable td:nth-child(3) {
-  width: 15%;
+  width: 10%;
 }
 
 #employersTable th:nth-child(4),
 #employersTable td:nth-child(4) {
-  width: 15%;
+  width: 25%;
 }
 
 #employersTable th:nth-child(5),
