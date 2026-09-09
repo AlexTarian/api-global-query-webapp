@@ -341,7 +341,7 @@ function renderCases(rows = cases) {
 
   body.innerHTML = rows.map(row => `
     <tr class="clickable" data-case="${GlobalQueryUI.escapeHtml_(row.caseNum)}">
-      <td>${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
+      <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.caseNum || '')}">${GlobalQueryUI.escapeHtml_(row.caseNum || '—')}</td>
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer || '')}"> ${row.fein 
         ? `<button type="button" class="case-employer-link" data-employer-fein="${GlobalQueryUI.escapeHtml_(row.fein)}" title="View employer details" >
           ${GlobalQueryUI.escapeHtml_(row.employer || '—')}
