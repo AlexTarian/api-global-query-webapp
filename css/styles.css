@@ -469,6 +469,12 @@
   width: 100%;
 }
 
+#employersTable {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
 #employersTable th,
 #employersTable td {
   overflow: hidden;
@@ -476,30 +482,30 @@
   white-space: nowrap;
 }
 
-  #employersTable th:nth-child(1),
-  #employersTable td:nth-child(1) {
-    width: 30%;
-  }
+#employersTable th:nth-child(1),
+#employersTable td:nth-child(1) {
+  width: 30%;
+}
 
-  #employersTable th:nth-child(2),
-  #employersTable td:nth-child(2) {
-    width: 15%;
-  }
+#employersTable th:nth-child(2),
+#employersTable td:nth-child(2) {
+  width: 15%;
+}
 
-  #employersTable th:nth-child(3),
-  #employersTable td:nth-child(3) {
-    width: 15%;
-  }
+#employersTable th:nth-child(3),
+#employersTable td:nth-child(3) {
+  width: 15%;
+}
 
-  #employersTable th:nth-child(4),
-  #employersTable td:nth-child(4) {
-    width: 15%;
-  }
+#employersTable th:nth-child(4),
+#employersTable td:nth-child(4) {
+  width: 15%;
+}
 
-  #employersTable th:nth-child(5),
-  #employersTable td:nth-child(5) {
-    width: 25%;
-  }
+#employersTable th:nth-child(5),
+#employersTable td:nth-child(5) {
+  width: 25%;
+}
 
 .agency-table-wrap {
   height: 400px;
