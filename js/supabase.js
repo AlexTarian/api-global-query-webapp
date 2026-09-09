@@ -10,7 +10,7 @@ window.globalQuerySupabase =
     SUPABASE_PUBLISHABLE_KEY
   );
 
-async function runSupabaseQueryWithRetry_(queryFactory, retries = 1) {
+async function withSupabaseRetry_(queryFactory, retries = 1) {
   const result = await queryFactory();
 
   if (
@@ -22,7 +22,7 @@ async function runSupabaseQueryWithRetry_(queryFactory, retries = 1) {
 
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    return runSupabaseQueryWithRetry_(queryFactory, retries - 1);
+    return withSupabaseRetry_(queryFactory, retries - 1);
   }
 
   return result;
