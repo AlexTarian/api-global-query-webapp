@@ -1576,6 +1576,7 @@
     #employersTable td:nth-child(3),
     #employersTable td:nth-child(4),
     #employersTable td:nth-child(5) {
+      display: block;
       width: auto !important;
       max-width: none !important;
       min-width: 0 !important;
