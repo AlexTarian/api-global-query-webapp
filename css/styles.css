@@ -469,6 +469,38 @@
   width: 100%;
 }
 
+#employerTable th,
+  #employerTable td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #employerTable th:nth-child(1),
+  #employerTable td:nth-child(1) {
+    width: 30%;
+  }
+
+  #employerTable th:nth-child(2),
+  #employerTable td:nth-child(2) {
+    width: 15%;
+  }
+
+  #employerTable th:nth-child(3),
+  #employerTable td:nth-child(3) {
+    width: 15%;
+  }
+
+  #employerTable th:nth-child(4),
+  #employerTable td:nth-child(4) {
+    width: 15%;
+  }
+
+  #employerTable th:nth-child(5),
+  #employerTable td:nth-child(5) {
+    width: 25%;
+  }
+
 .agency-table-wrap {
   height: 400px;
   overflow-y: auto;
