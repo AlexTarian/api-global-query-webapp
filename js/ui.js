@@ -33,6 +33,16 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function formatShortDate(value) {
+  if (!value) return '—';
+
+  const [year, month, day] = String(value).split('-');
+
+  if (!year || !month || !day) return '—';
+
+  return `${month}/${day}/${year.slice(-2)}`;
+}
+
 function formatBoolean_(value) {
   if (value === true) return '✓';
   if (value === false) return '✗';
@@ -111,4 +121,4 @@ function initializeTabs() {
   });
 }
 
-window.GlobalQueryUI = { escapeHtml_, formatDate, formatBoolean_, getErrorMessage_, appendKv, populateStateDropdown, initializeTabs, updateModalScrollLock_ };
+window.GlobalQueryUI = { escapeHtml_, formatDate, formatShortDate, formatBoolean_, getErrorMessage_, appendKv, populateStateDropdown, initializeTabs, updateModalScrollLock_ };
