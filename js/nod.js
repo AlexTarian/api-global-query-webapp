@@ -1676,7 +1676,7 @@ async function generateAllNodDrafts_(instructions = '') {
       deficiency.draftResponse = '';
 
        document.getElementById('nodDraftLoadingText').textContent =
-        `Generating Deficiency ${deficiency.number ?? index + 1} of ${currentNod.deficiencies.length}…`;
+        `Generating Response ${deficiency.number ?? index + 1} of ${currentNod.deficiencies.length}…`;
 
       console.log(`Generating NOD draft ${index + 1} of ${currentNod.deficiencies.length}...`);
 
