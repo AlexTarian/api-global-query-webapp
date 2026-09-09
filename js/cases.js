@@ -211,22 +211,11 @@ async function loadCaseDetail_(caseNum) {
 async function openCaseDetailByNumber_(caseNum) {
   if (!caseNum) return;
 
-  try {
-    const fullCase = await loadCaseDetail_(caseNum);
-    openCaseModal(fullCase);
-
-  } catch (error) {
-    console.error('Could not load case detail:', error);
-    alert('GlobalQuery could not load this case right now. Please try again.');
-  }
-}
-
-async function openCaseDetailByNumber_(caseNum) {
-  if (!caseNum) return;
-
   const modal = document.getElementById('detailModalOverlay');
 
   try {
+    clearCaseModal_();
+
     document.getElementById('detailModalTitle').textContent = caseNum;
     document.getElementById('detailModalEmployer').textContent = 'Loading case details…';
 
@@ -244,6 +233,23 @@ async function openCaseDetailByNumber_(caseNum) {
 
     alert('GlobalQuery could not load this case right now. Please try again.');
   }
+}
+
+function clearCaseModal_() {
+  document.getElementById('detailModalTitle').textContent = 'Loading…';
+  document.getElementById('detailModalEmployer').textContent = '';
+
+  document.getElementById('modalBusinessInfo').innerHTML = '';
+  document.getElementById('modalJobInfo').innerHTML = '';
+  document.getElementById('modalJobDesc').textContent = '';
+
+  document.getElementById('modalChurnInfo').innerHTML = '';
+
+  const churnBanner = document.getElementById('churnBanner');
+  churnBanner.className = 'churn-banner hidden';
+  churnBanner.innerHTML = '';
+
+  activeCaseModalRow = null;
 }
 
 async function searchGlobalQueryCases(filters) {
@@ -561,6 +567,8 @@ async function copyTextToClipboard_(text) {
 
 function closeCaseModal_() {
   document.getElementById('detailModalOverlay').classList.add('hidden');
+  clearCaseModal_();
+  GlobalQueryUI.updateModalScrollLock_();
 }
 
 async function downloadFilteredGlobalQueryCases() {
