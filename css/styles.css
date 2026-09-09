@@ -1553,7 +1553,9 @@
     }
 
     #employersTable tr {
-      display: block;
+      display: grid;
+      grid-template-columns: auto auto auto 1fr;
+      align-items: center;
       width: 100%;
       padding: 18px 20px;
       border-bottom: 1px solid var(--border);
@@ -1574,43 +1576,48 @@
     #employersTable td:nth-child(3),
     #employersTable td:nth-child(4),
     #employersTable td:nth-child(5) {
-      display: block;
-      width: 100% !important;
+      width: auto !important;
       max-width: none !important;
       min-width: 0 !important;
       padding: 0;
       border: 0;
-      white-space: normal;
       overflow: visible;
       text-overflow: unset;
     }
 
     #employersTable td:nth-child(1) {
-      margin-bottom: 10px;
+      grid-column: 1 / -1;
+      margin-bottom: 8px;
       font-size: 1rem;
       font-weight: 700;
       color: var(--text);
+      white-space: normal;
     }
 
-    #employersTable td:nth-child(2) {
-      margin-bottom: 7px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--muted);
-    }
-
+    #employersTable td:nth-child(2),
     #employersTable td:nth-child(3),
     #employersTable td:nth-child(4) {
-      margin-bottom: 7px;
       font-size: 0.86rem;
       line-height: 1.35;
       color: var(--muted);
+      white-space: nowrap;
+    }
+
+    #employersTable td:nth-child(2)::after,
+    #employersTable td:nth-child(3)::after {
+      content: "•";
+      display: inline-block;
+      margin: 0 8px;
+      color: var(--border-strong);
     }
 
     #employersTable td:nth-child(5) {
+      grid-column: 1 / -1;
+      margin-top: 8px;
       font-size: 0.86rem;
       line-height: 1.35;
       color: var(--muted);
+      white-space: normal;
     }
   }
 
