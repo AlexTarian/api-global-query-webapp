@@ -117,7 +117,7 @@ function renderEmployers_(rows = employers) {
         <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer_name || '')}">${GlobalQueryUI.escapeHtml_(row.employer_name || '—')}</td>
         <td>${GlobalQueryUI.escapeHtml_(row.employer_state || '—')}</td>
         <td class="center">${(Number(row.total_cases) || 0).toLocaleString()}</td>
-        <td>${GlobalQueryUI.formatDate(row.latest_start_date)}</td>
+        <td>${GlobalQueryUI.formatShortDate(row.latest_start_date)}</td>
         <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(agencyTooltip)}">${GlobalQueryUI.escapeHtml_(agencyDisplay)}</td>
       </tr>
     `;
@@ -310,9 +310,9 @@ function renderEmployerHistory_(history) {
         </div>
 
         <div class="employer-history-period">
-          ${GlobalQueryUI.formatDate(row.start_date)}
+          ${GlobalQueryUI.formatShortDate(row.start_date)}
           –
-          ${GlobalQueryUI.formatDate(row.end_date)}
+          ${GlobalQueryUI.formatShortDate(row.end_date)}
         </div>
 
         <div class="employer-history-meta">
