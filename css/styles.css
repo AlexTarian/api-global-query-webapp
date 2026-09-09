@@ -1534,7 +1534,84 @@
       font-size: 0.86rem;
       line-height: 1.35;
       color: var(--muted);
-    }  
+    }
+
+    /* Mobile Employers table becomes a stacked card list */
+    #employersTab .table-wrap {
+      height: auto;
+      max-height: none;
+    }
+
+    #employersTable,
+    #employersTable tbody {
+      display: block;
+      width: 100%;
+    }
+
+    #employersTable thead {
+      display: none;
+    }
+
+    #employersTable tr {
+      display: block;
+      width: 100%;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #employersTable tbody tr:nth-child(even),
+    #employersTable tbody tr:nth-child(odd) {
+      background: transparent;
+    }
+
+    #employersTable tbody tr:hover {
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    #employersTable td,
+    #employersTable td:nth-child(1),
+    #employersTable td:nth-child(2),
+    #employersTable td:nth-child(3),
+    #employersTable td:nth-child(4),
+    #employersTable td:nth-child(5) {
+      display: block;
+      width: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      padding: 0;
+      border: 0;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+    }
+
+    #employersTable td:nth-child(1) {
+      margin-bottom: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    #employersTable td:nth-child(2) {
+      margin-bottom: 7px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    #employersTable td:nth-child(3),
+    #employersTable td:nth-child(4) {
+      margin-bottom: 7px;
+      font-size: 0.86rem;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    #employersTable td:nth-child(5) {
+      font-size: 0.86rem;
+      line-height: 1.35;
+      color: var(--muted);
+    }
   }
 
 /* ---------- Authentication ---------- */
