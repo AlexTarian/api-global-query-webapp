@@ -85,29 +85,37 @@ async function searchGlobalQueryCases(filters) {
   const client = window.globalQuerySupabase;
   const agencyFiltered = Boolean(filters.agency);
 
-  let query = client.from('cases_with_occupation').select(caseSelect_(agencyFiltered), { count: 'exact' });
+  const { data, error, count } = await withSupabaseRetry_(() => {
+    let query = client
+      .from('cases_with_occupation')
+      .select(caseSelect_(agencyFiltered), { count: 'exact' });
 
-  if (filters.caseNum) query = query.ilike('case_num', `%${filters.caseNum}%`);
-  if (filters.employer) query = query.ilike('employer_name', `%${filters.employer}%`);
-  if (filters.state) query = query.eq('employer_state', filters.state);
-  if (filters.start) query = query.gte('start_date', filters.start);
-  if (filters.end) query = query.lte('start_date', filters.end);
-  if (filters.agency) query = query.eq('case_agencies.agencies.normalized_name', filters.agency);
-  if (filters.status) {
-    query = query.eq('case_status', filters.status);
-  }
-  if (filters.jobType) {
-    query = query.or(
-      `soc_code.eq.${filters.jobType},soc_code.like.${filters.jobType}.%`
-    );
-  }
+    if (filters.caseNum) query = query.ilike('case_num', `%${filters.caseNum}%`);
+    if (filters.employer) query = query.ilike('employer_name', `%${filters.employer}%`);
+    if (filters.state) query = query.eq('employer_state', filters.state);
+    if (filters.start) query = query.gte('start_date', filters.start);
+    if (filters.end) query = query.lte('start_date', filters.end);
+    if (filters.agency) query = query.eq('case_agencies.agencies.normalized_name', filters.agency);
+    if (filters.status) query = query.eq('case_status', filters.status);
 
-  query = query.order('case_num', { ascending: false }).limit(filters.limit);
+    if (filters.jobType) {
+      query = query.or(
+        `soc_code.eq.${filters.jobType},soc_code.like.${filters.jobType}.%`
+      );
+    }
 
-  const { data, error, count } = await query;
+    return query
+      .order('case_num', { ascending: false })
+      .limit(filters.limit);
+  });
+
   if (error) throw error;
 
-  return { rows: (data || []).map(mapCaseRow_), matched: count ?? 0, returned: data?.length || 0 };
+  return {
+    rows: (data || []).map(mapCaseRow_),
+    matched: count ?? 0,
+    returned: data?.length || 0
+  };
 }
 
 async function applyCaseFilters() {
