@@ -2354,11 +2354,14 @@ function bindNodEvents_() {
           `Generating Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}…`
         );
 
+        document.getElementById('nodDraftLoadingText').textContent = `Generating response ${index + 1} of ${currentNod.deficiencies.length}…`;
+
         await generateActiveNodDraft_();
         openNodDraftResult_(deficiency);
 
       } else if (mode === 'all') {
         showNodDraftLoading_('Generating all deficiency responses…');
+
         await generateAllNodDrafts_(instructions);
         openAllNodDraftResults_();
       }
@@ -2368,6 +2371,8 @@ function bindNodEvents_() {
       alert('GlobalQuery could not generate the draft. Please try again.');
 
     } finally {
+      hideNodDraftLoading_();
+
       button.disabled = false;
       button.textContent = 'Generate Draft';
     }
