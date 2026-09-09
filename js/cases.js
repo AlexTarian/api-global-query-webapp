@@ -3,6 +3,112 @@ let caseSearchRequest = 0;
 let activeCaseModalRow = null;
 let casesInitialized = false;
 
+function caseListSelect_() {
+  return `
+    case_num,
+    employer_name,
+    fein,
+    start_date,
+    end_date,
+    case_agencies(
+      agencies(
+        normalized_name,
+        display_name
+      )
+    )
+  `;
+}
+
+function mapCaseListRow_(row) {
+  const agencyRows = Array.isArray(row.case_agencies) ? row.case_agencies : [];
+  const agencies = agencyRows.map(item => item?.agencies).filter(Boolean);
+
+  return {
+    caseNum: row.case_num || '',
+    employer: row.employer_name || '',
+    fein: row.fein || '',
+    start: row.start_date || '',
+    end: row.end_date || '',
+    agency: agencies.map(item => item.normalized_name).filter(Boolean).join(' | '),
+    displayAgency: agencies.map(item => item.display_name || item.normalized_name).filter(Boolean).join(' | ')
+  };
+}
+
+async function loadInitialCases_() {
+  const requestId = ++caseSearchRequest;
+  const startedAt = performance.now();
+
+  setCasesLoading_(true);
+
+  try {
+    const rowsPromise = window.withSupabaseRetry_(() =>
+      window.globalQuerySupabase
+        .from('cases_with_occupation')
+        .select(caseListSelect_())
+        .order('case_num', { ascending: false })
+        .limit(25)
+    );
+
+    const countPromise = window.withSupabaseRetry_(() =>
+      window.globalQuerySupabase
+        .from('cases_with_occupation')
+        .select('case_num', {
+          count: 'exact',
+          head: true
+        })
+    );
+
+    const rowsResult = await rowsPromise;
+
+    if (requestId !== caseSearchRequest) return;
+    if (rowsResult.error) throw rowsResult.error;
+
+    cases = (rowsResult.data || []).map(mapCaseListRow_);
+    renderCases(cases);
+
+    document.getElementById('rowCountLabel').textContent =
+      `Showing ${cases.length.toLocaleString()} most recent cases`;
+
+    console.log('Initial case rows:', {
+      roundTripMs: Math.round(performance.now() - startedAt),
+      returned: cases.length
+    });
+
+    // Exact count can finish independently.
+    const countResult = await countPromise;
+
+    if (requestId !== caseSearchRequest) return;
+    if (countResult.error) throw countResult.error;
+
+    const total = Number(countResult.count) || 0;
+
+    document.getElementById('rowCountLabel').textContent =
+      `Showing ${cases.length.toLocaleString()} of ${total.toLocaleString()} cases`;
+
+    console.log('Initial case count:', {
+      total,
+      totalMs: Math.round(performance.now() - startedAt)
+    });
+
+  } catch (error) {
+    if (requestId !== caseSearchRequest) return;
+
+    console.error('Initial case load failed:', error);
+
+    cases = [];
+    document.querySelector('#casesTable tbody').innerHTML =
+      `<tr><td colspan="4" class="error-cell">${GlobalQueryUI.escapeHtml_(GlobalQueryUI.getErrorMessage_(error))}</td></tr>`;
+
+    document.getElementById('rowCountLabel').textContent =
+      'Unable to load cases';
+
+  } finally {
+    if (requestId === caseSearchRequest) {
+      setCasesLoading_(false);
+    }
+  }
+}
+
 function caseSelect_(agencyFiltered = false) {
   const relation = agencyFiltered
     ? 'case_agencies!inner(agencies!inner(normalized_name,display_name))'
@@ -88,7 +194,7 @@ async function searchGlobalQueryCases(filters) {
   const { data, error, count } = await withSupabaseRetry_(() => {
     let query = client
       .from('cases_with_occupation')
-      .select(caseSelect_(agencyFiltered), { count: 'exact' });
+      .select((agencyFiltered), { count: 'exact' });
 
     if (filters.caseNum) query = query.ilike('case_num', `%${filters.caseNum}%`);
     if (filters.employer) query = query.ilike('employer_name', `%${filters.employer}%`);
@@ -722,7 +828,7 @@ async function initializeCases() {
   GlobalQueryUI.populateStateDropdown();
   bindCaseEvents_();
 
-  applyCaseFilters();
+  loadInitialCases_();
 
   Promise.all([
     loadAgencyDropdown(),
