@@ -836,20 +836,6 @@
   background: var(--primary-soft);
 }
 
-.nod-upload-icon {
-  width: 54px;
-  height: 54px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 12px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: var(--primary-hover);
-}
-
 .nod-upload-copy {
   display: flex;
   flex-direction: column;
