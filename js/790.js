@@ -196,7 +196,7 @@ function render790JobOrders_(rows = jobOrders790) {
           : GlobalQueryUI.escapeHtml_(row.employer || '—')
         }
       </td>
-      <td class="nowrap">${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}</td>
+      <td class="nowrap">${GlobalQueryUI.formatShortDate(row.start)} – ${GlobalQueryUI.formatShortDate(row.end)}</td>
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.jobTitle || '')}">${GlobalQueryUI.escapeHtml_(row.jobTitle || '—')}</td>
     </tr>
   `).join('') || '<tr><td colspan="4" class="muted">No matching job orders.</td></tr>';
