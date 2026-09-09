@@ -27,3 +27,5 @@ async function runSupabaseQueryWithRetry_(queryFactory, retries = 1) {
 
   return result;
 }
+
+window.withSupabaseRetry_ = withSupabaseRetry_;
