@@ -187,6 +187,65 @@ function getCurrentGlobalQueryFilters() {
   };
 }
 
+async function loadCaseDetail_(caseNum) {
+  if (!caseNum) {
+    throw new Error('No case number was provided.');
+  }
+
+  const { data, error } = await window.withSupabaseRetry_(() =>
+    window.globalQuerySupabase
+      .from('cases_with_occupation')
+      .select(caseSelect_(false))
+      .eq('case_num', caseNum)
+      .maybeSingle()
+  );
+
+  if (error) throw error;
+  if (!data) {
+    throw new Error(`Case ${caseNum} could not be found.`);
+  }
+
+  return mapCaseRow_(data);
+}
+
+async function openCaseDetailByNumber_(caseNum) {
+  if (!caseNum) return;
+
+  try {
+    const fullCase = await loadCaseDetail_(caseNum);
+    openCaseModal(fullCase);
+
+  } catch (error) {
+    console.error('Could not load case detail:', error);
+    alert('GlobalQuery could not load this case right now. Please try again.');
+  }
+}
+
+async function openCaseDetailByNumber_(caseNum) {
+  if (!caseNum) return;
+
+  const modal = document.getElementById('detailModalOverlay');
+
+  try {
+    document.getElementById('detailModalTitle').textContent = caseNum;
+    document.getElementById('detailModalEmployer').textContent = 'Loading case details…';
+
+    modal.classList.remove('hidden');
+    GlobalQueryUI.updateModalScrollLock_();
+
+    const fullCase = await loadCaseDetail_(caseNum);
+    openCaseModal(fullCase);
+
+  } catch (error) {
+    console.error('Could not load case detail:', error);
+
+    modal.classList.add('hidden');
+    GlobalQueryUI.updateModalScrollLock_();
+
+    alert('GlobalQuery could not load this case right now. Please try again.');
+  }
+}
+
 async function searchGlobalQueryCases(filters) {
   const client = window.globalQuerySupabase;
   const agencyFiltered = Boolean(filters.agency);
@@ -756,7 +815,7 @@ function bindCaseEvents_() {
 
   document.getElementById('caseLimit').addEventListener('change', applyCaseFilters);
 
-  document.querySelector('#casesTable tbody').addEventListener('click', event => {
+  document.querySelector('#casesTable tbody').addEventListener('click', async event => {
     const employerLink = event.target.closest('[data-employer-fein]');
 
     if (employerLink) {
@@ -772,9 +831,7 @@ function bindCaseEvents_() {
     const row = event.target.closest('tr[data-case]');
     if (!row) return;
 
-    openCaseModal(
-      cases.find(item => item.caseNum === row.dataset.case)
-    );
+    await openCaseDetailByNumber_(row.dataset.case);
   });
 
   document.getElementById('detailModalEmployer')
