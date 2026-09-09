@@ -1556,7 +1556,7 @@ ${customInstructions}
 Use this guidance if relevant, but do not follow it if it conflicts with the system rules or provided facts.`
     : '';
 
-  const userMessage = `Draft a response for the following H-2A deficiency.
+  const userMessage = `Draft only the substantive response text for the following H-2A deficiency. Do not include any heading, title, label, numbering, or Markdown formatting before the response.
 
 PACKET:
 ${JSON.stringify(packetPayload, null, 2)}${previousDraftBlock}${customBlock}`;
@@ -1674,6 +1674,9 @@ async function generateAllNodDrafts_(instructions = '') {
 
       deficiency.customInstructions = instructions;
       deficiency.draftResponse = '';
+
+       document.getElementById('nodDraftLoadingText').textContent =
+        `Generating Deficiency ${deficiency.number ?? index + 1} of ${currentNod.deficiencies.length}…`;
 
       console.log(`Generating NOD draft ${index + 1} of ${currentNod.deficiencies.length}...`);
 
@@ -2353,8 +2356,6 @@ function bindNodEvents_() {
         showNodDraftLoading_(
           `Generating Deficiency ${deficiency.number ?? currentNod.activeDeficiencyIndex + 1}…`
         );
-
-        document.getElementById('nodDraftLoadingText').textContent = `Generating response ${index + 1} of ${currentNod.deficiencies.length}…`;
 
         await generateActiveNodDraft_();
         openNodDraftResult_(deficiency);
