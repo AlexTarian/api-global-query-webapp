@@ -115,9 +115,9 @@ function renderEmployers_(rows = employers) {
     return `
       <tr class="clickable" data-fein="${GlobalQueryUI.escapeHtml_(row.fein)}">
         <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.employer_name || '')}">${GlobalQueryUI.escapeHtml_(row.employer_name || '—')}</td>
-        <td>${GlobalQueryUI.escapeHtml_(row.employer_state || '—')}</td>
+        <td class="center">${GlobalQueryUI.escapeHtml_(row.employer_state || '—')}</td>
         <td class="center">${(Number(row.total_cases) || 0).toLocaleString()}</td>
-        <td>${GlobalQueryUI.formatShortDate(row.latest_start_date)}</td>
+        <td class="center">${GlobalQueryUI.formatShortDate(row.latest_start_date)}</td>
         <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(agencyTooltip)}">${GlobalQueryUI.escapeHtml_(agencyDisplay)}</td>
       </tr>
     `;
