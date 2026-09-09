@@ -349,7 +349,7 @@ function renderCases(rows = cases) {
         : GlobalQueryUI.escapeHtml_(row.employer || '—')
         }
       </td>
-      <td>${GlobalQueryUI.formatDate(row.start)} – ${GlobalQueryUI.formatDate(row.end)}</td>
+      <td>${GlobalQueryUI.formatShortDate(row.start)} – ${GlobalQueryUI.formatShortDate(row.end)}</td>
       <td class="ellipsis" title="${GlobalQueryUI.escapeHtml_(row.displayAgency || row.agency || '')}">${GlobalQueryUI.escapeHtml_(row.displayAgency || row.agency || '—')}</td>
     </tr>
   `).join('') || '<tr><td colspan="4" class="muted">No matching cases.</td></tr>';
