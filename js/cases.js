@@ -182,7 +182,12 @@ async function loadAgencyDropdown() {
   select.innerHTML = '<option value="">Loading agencies…</option>';
 
   try {
-    const { data, error } = await window.globalQuerySupabase.from('agencies').select('normalized_name,display_name').order('display_name');
+    const { data, error } = await withSupabaseRetry_(() =>
+      window.globalQuerySupabase
+        .from('agencies')
+        .select('normalized_name,display_name').order('display_name')
+    );
+    
     if (error) throw error;
 
     select.innerHTML = '<option value="">All Agencies</option>';
@@ -206,10 +211,12 @@ async function loadJobTypeDropdown() {
   select.innerHTML = '<option value="">Loading job types…</option>';
 
   try {
-    const { data, error } = await window.globalQuerySupabase
-      .from('case_job_types')
-      .select('soc_code,job_title')
-      .order('job_title');
+    const { data, error } = await withSupabaseRetry_(() =>
+      window.globalQuerySupabase
+        .from('case_job_types')
+        .select('soc_code,job_title')
+        .order('job_title')
+    );
 
     if (error) throw error;
 
@@ -235,10 +242,12 @@ async function loadStatusDropdown() {
   select.innerHTML = '<option value="">Loading statuses…</option>';
 
   try {
-    const { data, error } = await window.globalQuerySupabase
-      .from('case_statuses')
-      .select('case_status')
-      .order('case_status');
+    const { data, error } = await withSupabaseRetry_(() =>
+      window.globalQuerySupabase
+        .from('case_statuses')
+        .select('case_status')
+        .order('case_status')
+    );
 
     if (error) throw error;
 
@@ -514,7 +523,7 @@ async function fetchAllFilteredGlobalQueryCases_(filters) {
       );
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await withSupabaseRetry_(() => query);
 
     if (error) throw error;
 
