@@ -259,7 +259,7 @@ async function searchGlobalQueryCases(filters) {
   const { data, error, count } = await withSupabaseRetry_(() => {
     let query = client
       .from('cases_with_occupation')
-      .select((agencyFiltered), { count: 'exact' });
+      .select(caseSelect_(agencyFiltered), { count: 'exact' });
 
     if (filters.caseNum) query = query.ilike('case_num', `%${filters.caseNum}%`);
     if (filters.employer) query = query.ilike('employer_name', `%${filters.employer}%`);
