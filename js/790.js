@@ -23,6 +23,7 @@ function map790Row_(row) {
     workers: row.workers ?? '',
     cert: row.cert_required || '',
     drive: row.drive_required || '',
+    additionalRequirements: row.job_add_req_info || '',
     desc: row.job_description || '',
     syncedAt: row.synced_at || ''
   };
