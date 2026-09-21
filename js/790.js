@@ -21,8 +21,8 @@ function map790Row_(row) {
     start: row.start_date || '',
     end: row.end_date || '',
     workers: row.workers ?? '',
-    cert: row.cert_required || '',
-    drive: row.drive_required || '',
+    cert: row.cert_required ?? '',
+    drive: row.drive_required ?? '',
     additionalRequirements: row.job_add_req_info || '',
     desc: row.job_description || '',
     syncedAt: row.synced_at || ''
@@ -68,6 +68,7 @@ async function search790JobOrders_(filters) {
       cert_required,
       drive_required,
       job_description,
+      job_add_req_info,
       synced_at
     `, { count: 'exact' });
 
