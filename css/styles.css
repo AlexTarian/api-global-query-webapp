@@ -1189,10 +1189,15 @@
     white-space: nowrap;
   }
 
-  .modal-info-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  .modal-long-text {
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 8px;
+    line-height: 1.45;
+    color: var(--muted);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overscroll-behavior: contain;
   }
 
   .modal-info-card {
@@ -1213,6 +1218,14 @@
     grid-template-columns: 120px minmax(0, 1fr);
     gap: 8px 14px;
     align-items: start;
+  }
+
+  #modalJobDesc {
+    max-height: 260px;
+  }
+
+  #modalAdditionalRequirements {
+    max-height: 180px;
   }
 
   .kv { display: grid; grid-template-columns: minmax(125px, 0.42fr) 1fr; gap: 9px 12px; }
