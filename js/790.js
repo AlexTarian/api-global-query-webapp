@@ -262,6 +262,7 @@ function open790Modal_(row) {
   const businessInfo = document.getElementById('modalBusinessInfo');
   const jobInfo = document.getElementById('modalJobInfo');
   const jobDescription = document.getElementById('modalJobDesc');
+  const additionalRequirements = document.getElementById('modalAdditionalRequirements');
   const employerSubtitle = document.getElementById('detailModalEmployer');
 
   document.getElementById('detailModalTitle').textContent = row.caseNum || '790 Job Order';
@@ -279,7 +280,8 @@ function open790Modal_(row) {
   businessInfo.innerHTML = '';
   jobInfo.innerHTML = '';
   jobDescription.textContent = '';
-
+  additionalRequirements.textContent = '';
+  
   GlobalQueryUI.appendKv(businessInfo, [
     ['Address', GlobalQueryUI.escapeHtml_(cleanGlobalQueryText_(row.address) || '—')],
     ['FEIN', GlobalQueryUI.escapeHtml_(row.fein || '—')],
@@ -299,6 +301,7 @@ function open790Modal_(row) {
   ]);
 
   jobDescription.textContent = row.desc || '—';
+  additionalRequirements.textContent = row.additionalRequirements || '—';
 
   modal.classList.remove('hidden');
   GlobalQueryUI.updateModalScrollLock_();
