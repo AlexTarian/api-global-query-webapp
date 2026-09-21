@@ -1515,7 +1515,7 @@ Rules:
 - When referring to the Notice of Deficiency, abbreviate it to "NOD".
 - Address only the single deficiency provided.
 - Use the deficiency context as the starting point, but verify it against any employer data and supporting RAG materials.
-- Do not infer that a CDL is required from driving duties, equipment operation, or a general driver's-license requirement. Assume a CDL is not required unless the supplied job order explicitly states that a CDL is required. Check the Additional Requirements field for an explicit CDL requirement.
+- Do not infer that a CDL is required from driving duties, equipment operation, or a general driver's-license requirement. Assume a CDL is not required unless the supplied job order explicitly states that a CDL is required. Check the Additional Requirements field for an explicit CDL requirement. When the Additional Requirements field explicitly identifies the license as non-commercial or regular, treat that as controlling over any inference from the job duties or vehicle type.
 - Treat CFR, interpretation notes, and case law as support, not as text to copy mechanically.
 - Treat historical examples as substance/examples, not style templates.
 - Do not invent employer facts, documents, or legal arguments.
