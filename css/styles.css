@@ -1211,6 +1211,25 @@
     margin: 0 0 12px;
   }
 
+  .modal-job-text-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .modal-job-text-stack > .modal-info-card {
+    min-height: 0;
+  }
+
+  .modal-job-text-stack > .modal-info-card:not(.hidden) {
+    flex: 1 1 0;
+  }
+
+  .modal-job-text-stack .modal-long-text {
+    max-height: 205px;
+    overflow-y: auto;
+  }
+
   #modalBusinessInfo,
   #modalJobInfo,
   #modalEmployerInfo  {
@@ -1227,6 +1246,8 @@
   #modalAdditionalRequirements {
     max-height: 180px;
   }
+
+
 
   .kv { display: grid; grid-template-columns: minmax(125px, 0.42fr) 1fr; gap: 9px 12px; }
   .kv .k { color: var(--muted); font-weight: 700; }
