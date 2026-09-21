@@ -705,6 +705,7 @@ async function findNod790Case_(caseKey) {
       cert_required,
       drive_required,
       job_description,
+      job_add_req_info,
       synced_at
     `)
     .eq('case_key', caseKey)
@@ -731,7 +732,8 @@ async function findNod790Case_(caseKey) {
     workers: data.workers ?? '',
     cert: data.cert_required || '',
     drive: data.drive_required || '',
-    desc: data.job_description || ''
+    desc: data.job_description || '',
+    additionalRequirements: data.job_add_req_info || ''
   };
 }
 
@@ -1299,6 +1301,7 @@ function normalizeNodEmployerDataForDraft_(caseData = {}) {
 
     jobTitle: caseData.jobTitle || caseData.jobType || '',
     jobDescription: caseData.desc || '',
+    additionalRequirements: caseData.additionalRequirements || '',
     workersRequested: caseData.workers ?? '',
 
     periodOfNeedStart: start,
@@ -1354,7 +1357,8 @@ function buildEmployerContextForNodDeficiency_(caseData = {}, deficiencyType = '
   if (flags.includeRequirements) {
     Object.assign(context, {
       certificationRequired: employerData.certificationRequired,
-      drivingRequired: employerData.drivingRequired
+      drivingRequired: employerData.drivingRequired,
+      additionalRequirements: employerData.additionalRequirements
     });
   }
 
