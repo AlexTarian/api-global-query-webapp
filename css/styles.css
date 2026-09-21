@@ -1211,23 +1211,46 @@
     margin: 0 0 12px;
   }
 
-  .modal-job-text-stack {
+  /* Shared vertical stacks inside the case/790 modal */
+  .modal-info-stack {
     display: flex;
     flex-direction: column;
     gap: 12px;
-  }
-
-  .modal-job-text-stack > .modal-info-card {
     min-height: 0;
   }
 
-  .modal-job-text-stack > .modal-info-card:not(.hidden) {
-    flex: 1 1 0;
+  /* Right-hand Job Description / Additional Requirements stack */
+  .modal-job-text-stack {
+    height: 100%;
+    min-height: 0;
   }
 
+  /* When both cards are visible, divide the available height evenly */
+  .modal-job-text-stack > .modal-info-card:not(.hidden) {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Headings do not shrink */
+  .modal-job-text-stack > .modal-info-card > h3 {
+    flex: 0 0 auto;
+  }
+
+  /* Text takes the remaining card space and scrolls inside it */
   .modal-job-text-stack .modal-long-text {
-    max-height: 205px;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
     overflow-y: auto;
+    padding-right: 8px;
+    line-height: 1.45;
+    color: var(--muted);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overscroll-behavior: contain;
   }
 
   #modalBusinessInfo,
