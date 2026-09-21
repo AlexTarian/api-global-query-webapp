@@ -242,6 +242,7 @@ function clearCaseModal_() {
   document.getElementById('modalBusinessInfo').innerHTML = '';
   document.getElementById('modalJobInfo').innerHTML = '';
   document.getElementById('modalJobDesc').textContent = '';
+  document.getElementById('modalAdditionalRequirements').textContent = '';
 
   document.getElementById('modalChurnInfo').innerHTML = '';
 
