@@ -1239,16 +1239,6 @@
     align-items: start;
   }
 
-  #modalJobDesc {
-    max-height: 260px;
-  }
-
-  #modalAdditionalRequirements {
-    max-height: 180px;
-  }
-
-
-
   .kv { display: grid; grid-template-columns: minmax(125px, 0.42fr) 1fr; gap: 9px 12px; }
   .kv .k { color: var(--muted); font-weight: 700; }
   .kv .v { min-width: 0; overflow-wrap: anywhere; }
