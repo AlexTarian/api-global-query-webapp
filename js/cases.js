@@ -2,6 +2,23 @@ let cases = [];
 let caseSearchRequest = 0;
 let activeCaseModalRow = null;
 let casesInitialized = false;
+let caseModalView = 'details';
+
+function setCaseModalView_(view) {
+  caseModalView = view;
+
+  document.getElementById('modalCaseDetailsView').hidden = view !== 'details';
+  document.getElementById('modalExtractedView').hidden = view !== 'extracted';
+}
+
+function openExtractedCaseView_() {
+  if (!activeCaseModalRow?.caseNum) return;
+
+  setCaseModalView_('extracted');
+
+  document.getElementById('modalExtractedContent').textContent =
+    `Ready to extract job order ${activeCaseModalRow.caseNum}.`;
+}
 
 function caseListSelect_() {
   return `
@@ -251,6 +268,8 @@ function clearCaseModal_() {
   churnBanner.innerHTML = '';
 
   activeCaseModalRow = null;
+  setCaseModalView_('details');
+  document.getElementById('modalExtractedContent').textContent = 'No job order loaded.';
 }
 
 async function searchGlobalQueryCases(filters) {
@@ -469,6 +488,7 @@ function openCaseModal(caseRow, mode = 'case') {
 
   activeCaseModalRow = caseRow;
   setCaseModalMode_(mode);
+  setCaseModalView_('details');
 
   const modal = document.getElementById('detailModalOverlay');
   const churnPanel = document.getElementById('modalChurnInfoPanel');
@@ -883,6 +903,12 @@ function bindCaseEvents_() {
 
   document.getElementById('jobOrderBtn').addEventListener('click', () => {
     try { openExternalUrl_(getJobOrderUrl_(activeCaseModalRow)); } catch (error) { console.error('Could not open the job order:', error); }
+  });
+
+  document.getElementById('jobScanBtn').addEventListener('click', openExtractedCaseView_);
+
+  document.getElementById('backToCaseBtn').addEventListener('click', () => {
+    setCaseModalView_('details');
   });
 
   document.getElementById('downloadCsvButton').addEventListener('click', downloadFilteredGlobalQueryCases);
