@@ -771,6 +771,23 @@
   margin: 8px 0 0;
 }
 
+.jo-worksite-details {
+  display: grid;
+  gap: 3px;
+  margin: 8px 0;
+}
+
+.jo-worksite-field {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.35;
+}
+
+.jo-worksite-field strong {
+  flex-shrink: 0;
+}
+
 @media (max-width: 600px) {
   #agenciesTable {
     min-width: 0;
