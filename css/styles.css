@@ -249,7 +249,7 @@
     border: 1px solid var(--border-strong);
     background: #202b3a;
     color: var(--text);
-    border-radius: 9px;
+    border-radius: 100vh; 
     padding: 9px 13px;
     font-weight: 700;
   }
