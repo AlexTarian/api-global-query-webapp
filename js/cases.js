@@ -227,13 +227,21 @@ function renderAddendumBWorksites_(worksites) {
       ['Workers', site.workers]
     ];
 
+    details.className = 'jo-worksite-details';
+
     fields.forEach(([label, value]) => {
       if (value === null || value === undefined || value === '') return;
 
-      const line = document.createElement('p');
+      const line = document.createElement('div');
+      line.className = 'jo-worksite-field';
+
       const strong = document.createElement('strong');
-      strong.textContent = `${label}: `;
-      line.append(strong, document.createTextNode(String(value)));
+      strong.textContent = `${label}:`;
+
+      const span = document.createElement('span');
+      span.textContent = String(value);
+
+      line.append(strong, span);
       details.appendChild(line);
     });
 
