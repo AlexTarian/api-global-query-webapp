@@ -56,7 +56,10 @@ async function openExtractedCaseView_() {
 
     if (!window.pdfjsLib) throw new Error('PDF.js is not available.');
 
-    const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+    const pdf = await pdfjsLib.getDocument({
+      data: pdfBytes,
+      standardFontDataUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/'
+    }).promise;
     const pages = [];
 
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
@@ -92,10 +95,16 @@ async function openExtractedCaseView_() {
       page.text.includes('ETA-790A Addendum B')
     );
 
-    console.log('Addendum B positional data:', addendumBPages.map(page => ({
-      pageNumber: page.pageNumber,
-      items: page.items
-    })));
+    const addendumBPages = pages.filter(page =>
+      page.text.includes('ETA-790A Addendum B')
+    );
+
+    console.log('Addendum B positional data:', addendumBPages);
+
+    window.jobOrderDebug = {
+      caseNum,
+      addendumBPages
+    };
 
   } catch (error) {
     if (requestId !== jobOrderExtractRequest) return;
