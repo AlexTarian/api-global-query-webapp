@@ -831,10 +831,6 @@
   outline-offset: 2px;
 }
 
-.extractBackButton {
-  margin: 20px 0px;
-}    
-
 @media (max-width: 600px) {
   #agenciesTable {
     min-width: 0;
