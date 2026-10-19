@@ -51,6 +51,7 @@ function setCaseModalView_(view) {
 
   document.getElementById('modalCaseDetailsView').hidden = view !== 'details';
   document.getElementById('modalExtractedView').hidden = view !== 'extracted';
+  document.getElementById('extractBackButton').hidden = view !== 'extracted';
 }
 
 let jobOrderExtractRequest = 0;
