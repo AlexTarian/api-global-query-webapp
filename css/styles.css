@@ -788,6 +788,12 @@
   flex-shrink: 0;
 }
 
+.joItemHeading {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
 @media (max-width: 600px) {
   #agenciesTable {
     min-width: 0;
