@@ -1206,6 +1206,8 @@ function bindCaseEvents_() {
     setCaseModalView_('details');
   });
 
+  initializeJobOrderTabs_();
+
   document.getElementById('downloadCsvButton').addEventListener('click', downloadFilteredGlobalQueryCases);
 }
 
