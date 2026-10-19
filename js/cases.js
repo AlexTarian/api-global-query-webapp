@@ -63,11 +63,18 @@ async function openExtractedCaseView_() {
       const page = await pdf.getPage(pageNumber);
       const textContent = await page.getTextContent();
 
-      const text = textContent.items
-        .map(item => item.str || '')
-        .join(' ');
+      const items = textContent.items
+        .filter(item => typeof item.str === 'string' && item.str.trim())
+        .map(item => ({
+          text: item.str,
+          x: Math.round(item.transform[4] * 100) / 100,
+          y: Math.round(item.transform[5] * 100) / 100,
+          width: Math.round(item.width * 100) / 100,
+          height: Math.round(item.height * 100) / 100
+        }));
 
-      pages.push({ pageNumber, text });
+      const text = items.map(item => item.text).join(' ');
+      pages.push({ pageNumber, text, items });
     }
 
     if (requestId !== jobOrderExtractRequest || activeCaseModalRow?.caseNum !== caseNum) return;
@@ -81,6 +88,14 @@ async function openExtractedCaseView_() {
     });
 
     renderJobOrderTextPreview_(caseNum, pages);
+    const addendumBPages = pages.filter(page =>
+      page.text.includes('ETA-790A Addendum B')
+    );
+
+    console.log('Addendum B positional data:', addendumBPages.map(page => ({
+      pageNumber: page.pageNumber,
+      items: page.items
+    })));
 
   } catch (error) {
     if (requestId !== jobOrderExtractRequest) return;
