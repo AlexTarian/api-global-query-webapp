@@ -24,8 +24,24 @@ async function openExtractedCaseView_() {
   container.textContent = `Retrieving job order ${caseNum}...`;
 
   try {
-    const url = getJobOrderUrl_(activeCaseModalRow);
-    const response = await fetch(url);
+    const { data: { session }, error: sessionError } = await window.globalQuerySupabase.auth.getSession();
+
+    if (sessionError || !session?.access_token) {
+      throw new Error('You must be signed in to retrieve job orders.');
+    }
+
+    const response = await fetch(
+      `${window.globalQuerySupabase.supabaseUrl}/functions/v1/fetch-job-order`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': window.globalQuerySupabase.supabaseKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ caseNum })
+      }
+    );
 
     if (!response.ok) throw new Error(`PDF request returned HTTP ${response.status}`);
 
