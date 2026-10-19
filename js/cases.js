@@ -56,10 +56,7 @@ async function openExtractedCaseView_() {
 
     if (!window.pdfjsLib) throw new Error('PDF.js is not available.');
 
-    const pdf = await pdfjsLib.getDocument({
-      data: pdfBytes,
-      standardFontDataUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/'
-    }).promise;
+    const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
     const pages = [];
 
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
@@ -90,18 +87,15 @@ async function openExtractedCaseView_() {
       characters: fullText.length
     });
 
-    renderJobOrderTextPreview_(caseNum, pages);
+    const worksites = parseAddendumBWorksites_(pages);
+
+    console.log('Parsed Addendum B worksites:', worksites);
+
+    renderAddendumBWorksites_(worksites);
 
     const addendumBPages = pages.filter(page =>
       page.text.includes('ETA-790A Addendum B')
     );
-
-    console.log('Addendum B positional data:', addendumBPages);
-
-    window.jobOrderDebug = {
-      caseNum,
-      addendumBPages
-    };
 
   } catch (error) {
     if (requestId !== jobOrderExtractRequest) return;
@@ -132,6 +126,138 @@ function renderJobOrderTextPreview_(caseNum, pages) {
 
     section.append(heading, preview);
     container.appendChild(section);
+  });
+}
+
+function parseAddendumBWorksites_(pages) {
+  const worksites = [];
+
+  const addendumBPages = pages.filter(page =>
+    page.text.includes('Form ETA-790A Addendum B')
+  );
+
+  for (const page of addendumBPages) {
+    const items = page.items || [];
+
+    // Find the section boundaries.
+    const sectionStart = items.find(item =>
+      item.text.includes('C. Additional Place of Employment Information')
+    );
+
+    const sectionEnd = items.find(item =>
+      item.text.includes('D. Additional Housing Information')
+    );
+
+    if (!sectionStart || !sectionEnd) continue;
+
+    // Only use text positioned inside the worksite section.
+    const sectionItems = items.filter(item =>
+      item.y < 485 &&
+      item.y > sectionEnd.y &&
+      item.text.trim()
+    );
+
+    // Each worksite begins with an agricultural business name.
+    const businessItems = sectionItems
+      .filter(item => item.x >= 35 && item.x < 175)
+      .sort((a, b) => b.y - a.y);
+
+    for (let i = 0; i < businessItems.length; i++) {
+      const business = businessItems[i];
+      const nextBusiness = businessItems[i + 1];
+
+      const upperY = business.y + 6;
+      const lowerY = nextBusiness ? nextBusiness.y + 6 : sectionEnd.y;
+
+      const rowItems = sectionItems.filter(item =>
+        item.y <= upperY && item.y > lowerY
+      );
+
+      const columnText = (minX, maxX) => rowItems
+        .filter(item => item.x >= minX && item.x < maxX)
+        .sort((a, b) => b.y - a.y || a.x - b.x)
+        .map(item => item.text.trim())
+        .join(', ');
+
+      worksites.push({
+        business: business.text.trim(),
+        address: columnText(175, 400),
+        additionalInfo: columnText(400, 600),
+        beginDate: columnText(600, 655),
+        endDate: columnText(655, 700),
+        workers: Number(columnText(700, 760)) || null,
+        sourcePage: page.pageNumber
+      });
+    }
+  }
+
+  return worksites;
+}
+
+function renderAddendumBWorksites_(worksites) {
+  const container = document.getElementById('modalExtractedContent');
+  container.replaceChildren();
+
+  const heading = document.createElement('h3');
+  heading.textContent = `Additional Worksites (${worksites.length})`;
+  container.appendChild(heading);
+
+  if (!worksites.length) {
+    const message = document.createElement('p');
+    message.textContent = 'No Addendum B worksites were found.';
+    container.appendChild(message);
+    return;
+  }
+
+  worksites.forEach((site, index) => {
+    const card = document.createElement('div');
+    card.className = 'modal-info-card';
+
+    const title = document.createElement('h4');
+    title.textContent = `Worksite ${index + 1}`;
+
+    const details = document.createElement('div');
+
+    const fields = [
+      ['Business', site.business],
+      ['Location', site.address],
+      ['Additional Information', site.additionalInfo],
+      ['Begin Date', site.beginDate],
+      ['End Date', site.endDate],
+      ['Workers', site.workers]
+    ];
+
+    fields.forEach(([label, value]) => {
+      if (value === null || value === undefined || value === '') return;
+
+      const line = document.createElement('p');
+      const strong = document.createElement('strong');
+      strong.textContent = `${label}: `;
+      line.append(strong, document.createTextNode(String(value)));
+      details.appendChild(line);
+    });
+
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.textContent = 'Copy Worksite';
+
+    copyButton.addEventListener('click', async () => {
+      const text = fields
+        .filter(([, value]) => value !== null && value !== undefined && value !== '')
+        .map(([label, value]) => `${label}: ${value}`)
+        .join('\n');
+
+      try {
+        await navigator.clipboard.writeText(text);
+        copyButton.textContent = 'Copied!';
+        setTimeout(() => { copyButton.textContent = 'Copy Worksite'; }, 1500);
+      } catch (error) {
+        console.error('Could not copy worksite:', error);
+      }
+    });
+
+    card.append(title, details, copyButton);
+    container.appendChild(card);
   });
 }
 
