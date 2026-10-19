@@ -198,7 +198,7 @@ function renderAddendumBWorksites_(worksites) {
   const container = document.getElementById('modalExtractedContent');
   container.replaceChildren();
 
-  const heading = document.createElement('h3');
+  const heading = document.createElement('h4');
   heading.textContent = `Additional Worksites (${worksites.length})`;
   container.appendChild(heading);
 
@@ -213,7 +213,8 @@ function renderAddendumBWorksites_(worksites) {
     const card = document.createElement('div');
     card.className = 'modal-info-card';
 
-    const title = document.createElement('h4');
+    const title = document.createElement('div');
+    title.className = 'joItemHeading';
     title.textContent = `Worksite ${index + 1}`;
 
     const details = document.createElement('div');
