@@ -27,6 +27,11 @@ function renderJobOrderTab_() {
   const container = document.getElementById('modalExtractedContent');
 
   switch (activeJobOrderTab) {
+    
+    case 'rates':
+      container.innerHTML = '<h3>Addendum A</h3><p>Addendum A Records coming soon.</p>';
+    break;
+      
     case 'worksites':
       renderAddendumBWorksites_(activeJobOrderData.worksites);
       break;
@@ -35,12 +40,8 @@ function renderJobOrderTab_() {
       container.innerHTML = '<h3>Housing</h3><p>Housing extraction is coming next.</p>';
       break;
 
-    case 'rates':
-      container.innerHTML = '<h3>Wage Rates</h3><p>Wage extraction is coming next.</p>';
-      break;
-
     case 'terms':
-      container.innerHTML = '<h3>Material Terms</h3><p>Material terms extraction is coming next.</p>';
+      container.innerHTML = '<h3>Addendum C</h3><p>Addendum C Records coming soon.</p>';
       break;
   }
 }
