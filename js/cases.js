@@ -91,9 +91,6 @@ async function openExtractedCaseView_() {
     });
 
     renderJobOrderTextPreview_(caseNum, pages);
-    const addendumBPages = pages.filter(page =>
-      page.text.includes('ETA-790A Addendum B')
-    );
 
     const addendumBPages = pages.filter(page =>
       page.text.includes('ETA-790A Addendum B')
