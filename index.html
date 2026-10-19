@@ -620,65 +620,81 @@
       </div>
 
       <div class="modal-body">
+        
+        <div id="modalCaseDetailsView">
+          <div id="churnBanner" class="churn-banner hidden"></div>
 
-        <div id="churnBanner" class="churn-banner hidden"></div>
-
-        <div id="modalActionRow" class="modal-actions">
-          <button id="copyJfBtn" class="btn primary" type="button" title="Copy Jotform Link">⧉ JF</button>
-          <button id="openJfBtn" class="btn primary" type="button" title="Open Jotform Link">🌐︎ JF</button>
-          <button id="seasonalJobsBtn" class="btn primary" type="button" title="Open SeasonalJobs Link">🌐︎ SJ</button>
-          <button id="jobOrderBtn" class="btn primary" type="button" title="Open Job Order PDF">🌐︎ JO</button>
-          <button id="jobScanBtn" class="btn primary" type="button" title="Extract Job Order Info">⌕ JO</button>
-        </div>
-
-        <div class="modal-grid">
-
-          <div id="modalBusinessJobSection" class="modal-info-stack">
-            <div class="modal-info-card">
-              <h3>Business Info</h3>
-              <div id="modalBusinessInfo"></div>
-            </div>
-            <div class="modal-info-card">
-              <h3>Job Info</h3>
-              <div id="modalJobInfo"></div>
-            </div>
+          <div id="modalActionRow" class="modal-actions">
+            <button id="copyJfBtn" class="btn primary" type="button" title="Copy Jotform Link">⧉ JF</button>
+            <button id="openJfBtn" class="btn primary" type="button" title="Open Jotform Link">🌐︎ JF</button>
+            <button id="seasonalJobsBtn" class="btn primary" type="button" title="Open SeasonalJobs Link">🌐︎ SJ</button>
+            <button id="jobOrderBtn" class="btn primary" type="button" title="Open Job Order PDF">🌐︎ JO</button>
+            <button id="jobScanBtn" class="btn primary" type="button" title="Extract Job Order Info">⌕ JO</button>
           </div>
 
-          <div class="modal-info-stack modal-job-text-stack">
+          <div class="modal-grid">
 
-            <div id="modalJobDescriptionSection" class="modal-info-card">
-              <h3>Job Description</h3>
-              <div id="modalJobDesc" class="modal-long-text muted">—</div>
-            </div>
-
-            <div id="modalAdditionalRequirementsSection" class="modal-info-card hidden">
-              <h3>Additional Requirements</h3>
-              <div id="modalAdditionalRequirements" class="modal-long-text muted">—</div>
-            </div>
-
-          </div>
-
-          <div id="modalChurnInfoPanel" class="modal-panel full hidden">
-            <h4>Churn Information</h4>
-            <div class="kv" id="modalChurnInfo"></div>
-          </div>
-
-          <div id="modalEmployerPanel" class="modal-panel full hidden">
-            <div class="modal-info-card">
-              <h3>Business Info</h3>
-              <div id="modalEmployerInfo"></div>
-            </div>
-
-              <div class="employer-history-section">
-                <h3 style="margin-bottom: 3px;">Filing History</h3> 
-                <span id="modalEmployerCases" class="muted"> -</span>
-                <div id="modalEmployerHistory" class="employer-history">
-                  <div class="muted">Loading filing history...</div>
-                </div>
+            <div id="modalBusinessJobSection" class="modal-info-stack">
+              <div class="modal-info-card">
+                <h3>Business Info</h3>
+                <div id="modalBusinessInfo"></div>
+              </div>
+              <div class="modal-info-card">
+                <h3>Job Info</h3>
+                <div id="modalJobInfo"></div>
               </div>
             </div>
 
+            <div class="modal-info-stack modal-job-text-stack">
+
+              <div id="modalJobDescriptionSection" class="modal-info-card">
+                <h3>Job Description</h3>
+                <div id="modalJobDesc" class="modal-long-text muted">—</div>
+              </div>
+
+              <div id="modalAdditionalRequirementsSection" class="modal-info-card hidden">
+                <h3>Additional Requirements</h3>
+                <div id="modalAdditionalRequirements" class="modal-long-text muted">—</div>
+              </div>
+
+            </div>
+
+            <div id="modalChurnInfoPanel" class="modal-panel full hidden">
+              <h4>Churn Information</h4>
+              <div class="kv" id="modalChurnInfo"></div>
+            </div>
+
+            <div id="modalEmployerPanel" class="modal-panel full hidden">
+               <div class="modal-info-card">
+                <h3>Business Info</h3>
+                <div id="modalEmployerInfo"></div>
+              </div>
+
+                <div class="employer-history-section">
+                  <h3 style="margin-bottom: 3px;">Filing History</h3> 
+                  <span id="modalEmployerCases" class="muted"> -</span>
+                  <div id="modalEmployerHistory" class="employer-history">
+                    <div class="muted">Loading filing history...</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div><!-- /modalCaseDetailsView -->
+
+        <div id="modalExtractedView" hidden>
+          <div class="modal-actions">
+            <button id="backToCaseBtn" class="btn" type="button">← Back to Case</button>
+          </div>
+
+          <div class="modal-info-card">
+            <h3>Extracted Job Order</h3>
+            <div id="modalExtractedContent" class="muted">No job order loaded.</div>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
