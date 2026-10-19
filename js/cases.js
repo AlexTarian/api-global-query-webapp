@@ -3,6 +3,47 @@ let caseSearchRequest = 0;
 let activeCaseModalRow = null;
 let casesInitialized = false;
 let caseModalView = 'details';
+let activeJobOrderData = null;
+let activeJobOrderTab = 'worksites';
+
+function initializeJobOrderTabs_() {
+  document.querySelectorAll('[data-jo-tab]').forEach(button => {
+    button.addEventListener('click', () => {
+      activeJobOrderTab = button.dataset.joTab;
+      renderJobOrderTab_();
+    });
+  });
+}
+
+function renderJobOrderTab_() {
+  document.querySelectorAll('[data-jo-tab]').forEach(button => {
+    const active = button.dataset.joTab === activeJobOrderTab;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+
+  if (!activeJobOrderData) return;
+
+  const container = document.getElementById('modalExtractedContent');
+
+  switch (activeJobOrderTab) {
+    case 'worksites':
+      renderAddendumBWorksites_(activeJobOrderData.worksites);
+      break;
+
+    case 'housing':
+      container.innerHTML = '<h3>Housing</h3><p>Housing extraction is coming next.</p>';
+      break;
+
+    case 'rates':
+      container.innerHTML = '<h3>Wage Rates</h3><p>Wage extraction is coming next.</p>';
+      break;
+
+    case 'terms':
+      container.innerHTML = '<h3>Material Terms</h3><p>Material terms extraction is coming next.</p>';
+      break;
+  }
+}
 
 function setCaseModalView_(view) {
   caseModalView = view;
@@ -87,11 +128,15 @@ async function openExtractedCaseView_() {
       characters: fullText.length
     });
 
-    const worksites = parseAddendumBWorksites_(pages);
+    activeJobOrderData = {
+      caseNum,
+      pages,
+      worksites: parseAddendumBWorksites_(pages),
+      housing: [],
+    };
 
-    console.log('Parsed Addendum B worksites:', worksites);
-
-    renderAddendumBWorksites_(worksites);
+    activeJobOrderTab = 'worksites';
+    renderJobOrderTab_();
 
     const addendumBPages = pages.filter(page =>
       page.text.includes('ETA-790A Addendum B')
