@@ -11,13 +11,91 @@ function setCaseModalView_(view) {
   document.getElementById('modalExtractedView').hidden = view !== 'extracted';
 }
 
-function openExtractedCaseView_() {
+let jobOrderExtractRequest = 0;
+
+async function openExtractedCaseView_() {
   if (!activeCaseModalRow?.caseNum) return;
 
-  setCaseModalView_('extracted');
+  const caseNum = activeCaseModalRow.caseNum;
+  const requestId = ++jobOrderExtractRequest;
+  const container = document.getElementById('modalExtractedContent');
 
-  document.getElementById('modalExtractedContent').textContent =
-    `Ready to extract job order ${activeCaseModalRow.caseNum}.`;
+  setCaseModalView_('extracted');
+  container.textContent = `Retrieving job order ${caseNum}...`;
+
+  try {
+    const url = getJobOrderUrl_(activeCaseModalRow);
+    const response = await fetch(url);
+
+    if (!response.ok) throw new Error(`PDF request returned HTTP ${response.status}`);
+
+    const contentType = response.headers.get('content-type') || '';
+    console.log('Job order response:', { caseNum, contentType, status: response.status });
+
+    const pdfBytes = new Uint8Array(await response.arrayBuffer());
+
+    if (pdfBytes.length < 5 || String.fromCharCode(...pdfBytes.slice(0, 5)) !== '%PDF-') {
+      throw new Error('The endpoint did not return a valid PDF.');
+    }
+
+    if (!window.pdfjsLib) throw new Error('PDF.js is not available.');
+
+    const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+    const pages = [];
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+
+      const text = textContent.items
+        .map(item => item.str || '')
+        .join(' ');
+
+      pages.push({ pageNumber, text });
+    }
+
+    if (requestId !== jobOrderExtractRequest || activeCaseModalRow?.caseNum !== caseNum) return;
+
+    const fullText = pages.map(page => `PAGE ${page.pageNumber}\n${page.text}`).join('\n\n');
+
+    console.log('Job order extraction complete:', {
+      caseNum,
+      pages: pdf.numPages,
+      characters: fullText.length
+    });
+
+    renderJobOrderTextPreview_(caseNum, pages);
+
+  } catch (error) {
+    if (requestId !== jobOrderExtractRequest) return;
+
+    console.error('Job order extraction failed:', error);
+    container.textContent = `Unable to extract job order: ${GlobalQueryUI.getErrorMessage_(error)}`;
+  }
+}
+
+function renderJobOrderTextPreview_(caseNum, pages) {
+  const container = document.getElementById('modalExtractedContent');
+  container.replaceChildren();
+
+  const summary = document.createElement('p');
+  summary.textContent = `Successfully extracted ${pages.length} page(s) from ${caseNum}.`;
+  container.appendChild(summary);
+
+  pages.forEach(({ pageNumber, text }) => {
+    const section = document.createElement('div');
+    section.className = 'modal-info-card';
+
+    const heading = document.createElement('h4');
+    heading.textContent = `Page ${pageNumber}`;
+
+    const preview = document.createElement('pre');
+    preview.className = 'job-order-text-preview';
+    preview.textContent = text || '(No embedded text found)';
+
+    section.append(heading, preview);
+    container.appendChild(section);
+  });
 }
 
 function caseListSelect_() {
