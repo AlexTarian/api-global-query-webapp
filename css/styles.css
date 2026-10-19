@@ -28,6 +28,11 @@
     display: none !important;
   }
 
+  #modalCaseDetailsView[hidden],
+  #modalExtractedView[hidden] {
+    display: none !important;
+  }
+
   html, body {
     width: 100%;
     max-width: 100%;
