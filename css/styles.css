@@ -29,7 +29,7 @@
   }
 
   #modalCaseDetailsView[hidden],
-  #modalExtractedView[hidden] {
+  #modaledView[hidden] {
     display: none !important;
   }
 
@@ -832,7 +832,7 @@
 }
 
 .extractBackButton {
-  margin-top: 10px;
+  margin: 20px 0px;
 }    
 
 @media (max-width: 600px) {
