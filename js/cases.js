@@ -868,48 +868,69 @@ function getAddendumCBodyLines_(page) {
 
 function parseAddendumCTerms_(pages) {
   const terms = [];
-  let current = null;
 
-  function finishCurrent() {
-    if (!current) return;
-
-    const details = current.lines.join('\n').trim();
-
-    if (details) {
-      terms.push({
-        id: '',
-        section: current.section,
-        summary: details.replace(/\s+/g, ' ').slice(0, 150),
-        details,
-        sourcePage: current.sourcePage
-      });
-    }
-
-    current = null;
-  }
+  const clean = text => String(text || '').replace(/\s+/g, ' ').trim();
+  const isEntryHeading = text => /^[a-z]\.\s*Job Offer Information\s+\d+\b/i.test(text);
+  const isFieldHeading = text => /(?:Section\/Item Number|Name of Section or Category of Material Term or Condition|Details of Material Term or Condition)/i.test(text);
+  const isBoilerplate = text => /^(?:H\.\s*Additional Material Terms|For Public Burden Statement|OMB Approval:|Expiration Date:|H-2A Case Number:|Case Status:|Determination Date:|FOR DEPARTMENT OF LABOR USE ONLY|Page C\.\d+)/i.test(text);
 
   for (const page of getAddendumCPages_(pages)) {
-    const lines = getAddendumCBodyLines_(page);
+    const rows = getPdfTextRows_(page, 3)
+      .filter(row => row.y > 70 && row.y < 520)
+      .sort((a, b) => b.y - a.y);
 
-    for (const line of lines) {
-      // Detect numbered entries, such as "1. ..." or "2) ...".
-      const match = line.match(/^(\d{1,3})[.)]\s+(.+)$/);
+    const headings = rows.filter(row => isEntryHeading(clean(row.text)));
 
-      if (match) {
-        finishCurrent();
+    for (let i = 0; i < headings.length; i++) {
+      const heading = headings[i];
+      const nextHeading = headings[i + 1];
+      const bottom = nextHeading ? nextHeading.y : 70;
 
-        current = {
-          section: match[1],
-          lines: [match[2]],
-          sourcePage: page.pageNumber
-        };
-      } else if (current) {
-        current.lines.push(line);
-      }
+      const entryRows = rows.filter(row => row.y < heading.y && row.y > bottom);
+      const detailsHeadingIndex = entryRows.findIndex(row =>
+        /3\.\s*Details of Material Term or Condition/i.test(clean(row.text))
+      );
+
+      if (detailsHeadingIndex === -1) continue;
+
+      const headerRows = entryRows.slice(0, detailsHeadingIndex);
+      const detailRows = entryRows.slice(detailsHeadingIndex + 1);
+
+      // Find the section and category using their positions in the form.
+      // Values can share a row with the field labels or appear above them.
+      const headerItems = (page.items || [])
+        .filter(item => item.y < heading.y && item.y > entryRows[detailsHeadingIndex].y)
+        .filter(item => !isFieldHeading(clean(item.text)));
+
+      const section = clean(headerItems
+        .filter(item => item.x >= 170 && item.x < 330)
+        .map(item => item.text)
+        .join(' '))
+        .match(/\b[A-Z]\.\d+[a-z]?\b/i)?.[0] || '';
+
+      const category = clean(headerItems
+        .filter(item => item.x >= 580)
+        .map(item => item.text)
+        .join(' '));
+
+      const details = clean(detailRows
+        .filter(row => !isBoilerplate(clean(row.text)))
+        .filter(row => !isFieldHeading(clean(row.text)))
+        .map(row => row.text)
+        .join(' '));
+
+      if (!details) continue;
+
+      terms.push({
+        id: '',
+        section,
+        summary: category,
+        details,
+        sourcePage: page.pageNumber
+      });
     }
   }
 
-  finishCurrent();
   return terms;
 }
 
