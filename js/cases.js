@@ -36,11 +36,11 @@ function renderJobOrderTab_() {
       break;
 
     case 'housing':
-      container.innerHTML = '<h3>Housing</h3><p>Housing extraction is coming next.</p>';
+      renderJobOrderHousing_(activeJobOrderData.housing);
       break;
 
     case 'terms':
-      container.innerHTML = '<h3>Addendum C</h3><p>Material terms extraction is coming next.</p>';
+      renderAddendumCTerms_(activeJobOrderData.terms);
       break;
   }
 
@@ -196,10 +196,10 @@ async function openExtractedCaseView_() {
       pages,
       rates: parseAddendumARates_(pages),
       worksites: parseAddendumBWorksites_(pages),
-      housing: [],
-      terms: [],
+      housing: parseJobOrderHousing_(pages),
+      terms: parseAddendumCTerms_(pages),
       exportReady: {
-        rates: false,
+        rates: true,
         worksites: false,
         housing: false,
         terms: false
@@ -208,6 +208,8 @@ async function openExtractedCaseView_() {
 
     console.log('Addendum A parsed rates:', activeJobOrderData.rates.length);
     console.table(activeJobOrderData.rates);
+    console.log('Housing records:', activeJobOrderData.housing.length);
+    console.table(activeJobOrderData.housing);
 
     inspectAddendumALayout_(pages);
 
@@ -438,6 +440,335 @@ function parseAddendumARates_(pages) {
   }
 
   return rates;
+}
+
+function makeEmptyHousingRecord_(source, pageNumber) {
+  return {
+    id: '', address_street: '', city: '', county: '', state: '', zip: '',
+    description: '', type: '', num_units: '', total_occupancy: '', nickname: '',
+    is_inspection_authority_local: '', is_inspection_authority_swa: '',
+    is_inspection_authority_other_state: '', is_inspection_authority_federal: '',
+    is_inspection_authority_other: '', inspection_authority_other: '',
+    source, sourcePage: pageNumber, reviewWarnings: []
+  };
+}
+
+function housingText_(items) {
+  return items.sort((a, b) => b.y - a.y || a.x - b.x)
+    .map(item => item.text.trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function housingBetween_(page, topY, bottomY, minX = 0, maxX = Infinity) {
+  return (page.items || []).filter(item =>
+    item.y < topY && item.y > bottomY && item.x >= minX && item.x < maxX && item.text?.trim()
+  );
+}
+
+function housingFind_(page, pattern) {
+  return (page.items || []).find(item => pattern.test(item.text));
+}
+
+function parseHousingAddress_(raw, record) {
+  const lines = String(raw || '').split(/\n|,\s*(?=[A-Za-z ]+\s+\d{5})/).map(s => s.trim()).filter(Boolean);
+  const text = lines.join(', ');
+  const match = text.match(/^(.*?),?\s+([A-Za-z][A-Za-z .'-]*),\s*([A-Za-z][A-Za-z ]+?)\s+(\d{5})(?:-\d{4})?(?:,?\s+([A-Za-z ]+COUNTY))?$/i);
+
+  if (match) {
+    record.address_street = match[1].replace(/,\s*$/, '').trim();
+    record.city = match[2].trim();
+    record.state = match[3].trim();
+    record.zip = match[4];
+    if (match[5]) record.county = match[5].trim();
+  } else {
+    record.address_street = lines[0] || '';
+    record.reviewWarnings.push('Review address components against PDF.');
+  }
+}
+
+function parseMainHousing_(pages) {
+  const records = [];
+
+  for (const page of pages) {
+    if (!/D\.\s*Housing Information/i.test(page.text) || /Form ETA-790A Addendum B/i.test(page.text)) continue;
+
+    const start = housingFind_(page, /^D\.\s*Housing Information/i);
+    const end = housingFind_(page, /^11\.\s*Is a completed Addendum B/i);
+    if (!start) continue;
+
+    const record = makeEmptyHousingRecord_('Main ETA-790A', page.pageNumber);
+    const sections = [
+      housingFind_(page, /^1\.\s*Housing Address/i),
+      housingFind_(page, /^2\.\s*City/i),
+      housingFind_(page, /^6\.\s*Type of Housing/i),
+      housingFind_(page, /^9\.\s*Identify the entity/i),
+      housingFind_(page, /^10\.\s*Additional Housing/i)
+    ];
+
+    if (sections.some(section => !section)) {
+      record.reviewWarnings.push('One or more main housing field labels were not located.');
+      continue;
+    }
+
+    const [addressLabel, cityLabel, typeLabel, inspectionLabel, descriptionLabel] = sections;
+
+    record.address_street = housingText_(housingBetween_(page, addressLabel.y - 1, cityLabel.y + 2, 30, 780));
+
+    const locationItems = housingBetween_(page, cityLabel.y - 1, typeLabel.y + 2);
+    const locationColumns = [
+      [30, 190, 'city'], [190, 320, 'state'], [320, 450, 'zip'], [450, 780, 'county']
+    ];
+
+    for (const [minX, maxX, key] of locationColumns) {
+      record[key] = housingText_(locationItems.filter(item => item.x >= minX && item.x < maxX));
+    }
+
+    const typeItems = housingBetween_(page, typeLabel.y - 1, inspectionLabel.y + 2);
+    const typeText = housingText_([...typeItems]);
+    const unitsMatch = typeText.match(/\b(\d+)\s+(\d+)\b/);
+
+    if (unitsMatch) {
+      record.num_units = unitsMatch[1];
+      record.total_occupancy = unitsMatch[2];
+    } else {
+      record.reviewWarnings.push('Could not confidently identify units and occupancy.');
+    }
+
+    // Checkbox glyphs may be represented differently by PDF.js.
+    // Leave type and inspection flags unknown until checked visually.
+    record.reviewWarnings.push('Verify housing type and inspection authorities against the PDF.');
+
+    record.description = housingText_(housingBetween_(
+      page, descriptionLabel.y - 1, end?.y ?? 55, 30, 780
+    ));
+
+    records.push(record);
+  }
+
+  return records;
+}
+
+function parseAddendumBHousing_(pages) {
+  const records = [];
+
+  for (const page of pages) {
+    if (!/Form ETA-790A Addendum B/i.test(page.text)) continue;
+
+    const section = housingFind_(page, /^D\.\s*Additional Housing Information/i);
+    if (!section) continue;
+
+    // Some Addendum B pages contain only the D heading at the bottom.
+    // Others contain the actual housing table with different positioning.
+    const tableHeader = housingFind_(page, /2\.\s*Physical Location/i);
+    if (!tableHeader) continue;
+
+    const locationItems = (page.items || [])
+      .filter(item => item.x >= 175 && item.x < 405 && item.y < tableHeader.y - 8 && item.y > 75)
+      .sort((a, b) => b.y - a.y);
+
+    // Group address lines into entries using the city/state/ZIP line.
+    const cityLine = /,\s*[A-Za-z ]+\s+\d{5}/;
+
+    for (let i = 0; i < locationItems.length; i++) {
+      if (!cityLine.test(locationItems[i].text)) continue;
+
+      const anchor = locationItems[i];
+      const nearby = locationItems.filter(item => Math.abs(item.y - anchor.y) < 35);
+      const rawAddress = housingText_(nearby);
+
+      const record = makeEmptyHousingRecord_('Addendum B', page.pageNumber);
+      parseHousingAddress_(rawAddress, record);
+
+      record.reviewWarnings.push('Verify Addendum B housing type, occupancy, description, and inspection authorities.');
+      records.push(record);
+    }
+  }
+
+  return records;
+}
+
+function parseJobOrderHousing_(pages) {
+  return [
+    ...parseMainHousing_(pages),
+    ...parseAddendumBHousing_(pages)
+  ];
+}
+
+function renderJobOrderHousing_(housing) {
+  const container = document.getElementById('modalExtractedContent');
+  container.replaceChildren();
+
+  const heading = document.createElement('h4');
+  heading.textContent = `Housing Locations (${housing.length})`;
+  container.appendChild(heading);
+
+  if (!housing.length) {
+    const message = document.createElement('p');
+    message.textContent = 'No housing records were identified.';
+    container.appendChild(message);
+    return;
+  }
+
+  housing.forEach((record, index) => {
+    const card = document.createElement('div');
+    card.className = 'modal-info-card';
+
+    const title = document.createElement('div');
+    title.className = 'joItemHeading';
+    title.textContent = `Housing ${index + 1} — ${record.source}`;
+
+    const details = document.createElement('div');
+    details.className = 'jo-worksite-details';
+
+    const fields = [
+      ['Street', record.address_street],
+      ['City', record.city],
+      ['County', record.county],
+      ['State', record.state],
+      ['ZIP', record.zip],
+      ['Description', record.description],
+      ['Housing Type', record.type === 1 || record.type === '1' ? 'Owned/Rented' : record.type === 2 || record.type === '2' ? 'Public Accommodation' : 'Needs review'],
+      ['Units', record.num_units],
+      ['Total Occupancy', record.total_occupancy],
+      ['Source Page', record.sourcePage]
+    ];
+
+    fields.forEach(([label, value]) => {
+      if (value === null || value === undefined || value === '') return;
+
+      const line = document.createElement('div');
+      line.className = 'jo-worksite-field';
+
+      const strong = document.createElement('strong');
+      strong.textContent = `${label}:`;
+
+      const span = document.createElement('span');
+      span.textContent = String(value);
+
+      line.append(strong, span);
+      details.appendChild(line);
+    });
+
+    if (record.reviewWarnings.length) {
+      const warning = document.createElement('p');
+      warning.className = 'jo-housing-warning';
+      warning.textContent = `Review needed: ${record.reviewWarnings.join(' ')}`;
+      details.appendChild(warning);
+    }
+
+    card.append(title, details);
+    container.appendChild(card);
+  });
+}
+
+function getAddendumCPages_(pages) {
+  return pages.filter(page =>
+    /(?:Form\s+)?ETA-790A\s+Addendum\s+C/i.test(page.text)
+  );
+}
+
+function getAddendumCBodyLines_(page) {
+  const rows = getPdfTextRows_(page, 3);
+
+  return rows
+    .filter(row => row.y > 70 && row.y < 520)
+    .filter(row => !/^(?:Form ETA-790A Addendum C|U\.S\. Department of Labor|H-2A Agricultural Clearance Order)/i.test(row.text))
+    .filter(row => !/^Page C\.\d+ of C\.\d+/i.test(row.text))
+    .map(row => row.text.trim())
+    .filter(Boolean);
+}
+
+function parseAddendumCTerms_(pages) {
+  const terms = [];
+  let current = null;
+
+  function finishCurrent() {
+    if (!current) return;
+
+    const details = current.lines.join('\n').trim();
+
+    if (details) {
+      terms.push({
+        id: '',
+        section: current.section,
+        summary: details.replace(/\s+/g, ' ').slice(0, 150),
+        details,
+        sourcePage: current.sourcePage
+      });
+    }
+
+    current = null;
+  }
+
+  for (const page of getAddendumCPages_(pages)) {
+    const lines = getAddendumCBodyLines_(page);
+
+    for (const line of lines) {
+      // Detect numbered entries, such as "1. ..." or "2) ...".
+      const match = line.match(/^(\d{1,3})[.)]\s+(.+)$/);
+
+      if (match) {
+        finishCurrent();
+
+        current = {
+          section: match[1],
+          lines: [match[2]],
+          sourcePage: page.pageNumber
+        };
+      } else if (current) {
+        current.lines.push(line);
+      }
+    }
+  }
+
+  finishCurrent();
+  return terms;
+}
+
+function renderAddendumCTerms_(terms) {
+  const container = document.getElementById('modalExtractedContent');
+  container.replaceChildren();
+
+  const heading = document.createElement('h4');
+  heading.textContent = `Addendum C — Material Terms (${terms.length})`;
+  container.appendChild(heading);
+
+  if (!terms.length) {
+    const message = document.createElement('p');
+    message.textContent = 'No Addendum C material terms were identified.';
+    container.appendChild(message);
+    return;
+  }
+
+  terms.forEach((term, index) => {
+    const card = document.createElement('div');
+    card.className = 'modal-info-card';
+
+    const title = document.createElement('div');
+    title.className = 'joItemHeading';
+    title.textContent = `Term ${index + 1} — Section ${term.section}`;
+
+    const details = document.createElement('div');
+    details.className = 'jo-worksite-details';
+
+    const summary = document.createElement('div');
+    summary.className = 'jo-worksite-field';
+
+    const summaryLabel = document.createElement('strong');
+    summaryLabel.textContent = 'Summary:';
+
+    const summaryText = document.createElement('span');
+    summaryText.textContent = term.summary;
+
+    summary.append(summaryLabel, summaryText);
+
+    const body = document.createElement('p');
+    body.className = 'jo-term-details';
+    body.textContent = term.details;
+
+    details.append(summary, body);
+    card.append(title, details);
+    container.appendChild(card);
+  });
 }
 
 function renderAddendumARates_(rates) {
