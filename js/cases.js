@@ -485,63 +485,107 @@ function parseHousingAddress_(raw, record) {
   }
 }
 
+function housingClean_(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function housingItems_(page, top, bottom, left = 0, right = Infinity) {
+  return (page.items || [])
+    .filter(i => i.text?.trim() && i.y <= top && i.y > bottom && i.x >= left && i.x < right)
+    .sort((a, b) => b.y - a.y || a.x - b.x);
+}
+
+function housingValue_(page, top, bottom, left, right) {
+  return housingClean_(housingItems_(page, top, bottom, left, right).map(i => i.text).join(' '));
+}
+
+function housingLabel_(page, pattern) {
+  return (page.items || []).find(i => pattern.test(housingClean_(i.text)));
+}
+
+function housingCheck_(page, x, y, toleranceX = 7, toleranceY = 7) {
+  const marks = housingItems_(page, y + toleranceY, y - toleranceY, x - toleranceX, x + toleranceX);
+
+  // PDF.js may represent a checked box as a control character,
+  // checkmark, or a symbol-font character.
+  const checked = marks.some(i => /[\u0001-\u001F✓✔☑]/.test(i.text));
+
+  return checked ? 1 : '';
+}
+
+function housingSetAddress_(record, street, location, county) {
+  record.address_street = housingClean_(street);
+  record.county = housingClean_(county).replace(/\s+COUNTY$/i, ' County');
+
+  const match = housingClean_(location).match(/^(.+?),\s*(.+?)\s+(\d{5})(?:-\d{4})?$/);
+
+  if (match) {
+    record.city = match[1];
+    record.state = match[2];
+    record.zip = match[3];
+  } else {
+    record.reviewWarnings.push('Review city, state, and ZIP.');
+  }
+}
+
 function parseMainHousing_(pages) {
   const records = [];
 
   for (const page of pages) {
-    if (!/D\.\s*Housing Information/i.test(page.text) || /Form ETA-790A Addendum B/i.test(page.text)) continue;
+    if (/Form ETA-790A Addendum [ABC]/i.test(page.text)) continue;
 
-    const start = housingFind_(page, /^D\.\s*Housing Information/i);
-    const end = housingFind_(page, /^11\.\s*Is a completed Addendum B/i);
-    if (!start) continue;
+    const heading = housingLabel_(page, /^D\.\s*Housing Information$/i);
+    const address = housingLabel_(page, /^1\.\s*Housing Address/i);
+    const city = housingLabel_(page, /^2\.\s*City/i);
+    const type = housingLabel_(page, /^6\.\s*Type of Housing/i);
+    const inspection = housingLabel_(page, /^9\.\s*Identify the entity/i);
+    const description = housingLabel_(page, /^10\.\s*Additional Housing Information/i);
+
+    if (!heading || !address || !city || !type || !inspection || !description) continue;
 
     const record = makeEmptyHousingRecord_('Main ETA-790A', page.pageNumber);
-    const sections = [
-      housingFind_(page, /^1\.\s*Housing Address/i),
-      housingFind_(page, /^2\.\s*City/i),
-      housingFind_(page, /^6\.\s*Type of Housing/i),
-      housingFind_(page, /^9\.\s*Identify the entity/i),
-      housingFind_(page, /^10\.\s*Additional Housing/i)
+
+    // Main-form field positions are relative to the section labels.
+    record.address_street = housingValue_(page, address.y - 2, city.y + 2, 35, 600);
+    record.city = housingValue_(page, city.y - 2, type.y + 3, 35, 260);
+    record.state = housingValue_(page, city.y - 2, type.y + 3, 260, 315);
+    record.zip = housingValue_(page, city.y - 2, type.y + 3, 315, 405);
+    record.county = housingValue_(page, city.y - 2, type.y + 3, 405, 600);
+
+    // The units and occupancy appear below the labels in the same row.
+    const numericItems = housingItems_(page, type.y - 2, inspection.y + 3, 390, 600)
+      .filter(i => /^\d+$/.test(i.text.trim()));
+
+    record.num_units = numericItems.find(i => i.x < 475)?.text || '';
+    record.total_occupancy = numericItems.find(i => i.x >= 475)?.text || '';
+
+    const typeMark = housingCheck_(page, 74, type.y - 12, 10, 8);
+    const rentalMark = housingCheck_(page, 230, type.y - 12, 10, 8);
+    if (typeMark && !rentalMark) record.type = 1;
+    else if (rentalMark && !typeMark) record.type = 2;
+    else record.reviewWarnings.push('Verify housing type checkbox.');
+
+    // Inspection marks: positions relative to the inspection heading.
+    const inspectionY = inspection.y - 13;
+    const inspectionFlags = [
+      ['is_inspection_authority_local', 74],
+      ['is_inspection_authority_swa', 155],
+      ['is_inspection_authority_other_state', 199],
+      ['is_inspection_authority_federal', 305],
+      ['is_inspection_authority_other', 395]
     ];
 
-    if (sections.some(section => !section)) {
-      record.reviewWarnings.push('One or more main housing field labels were not located.');
-      continue;
+    for (const [field, x] of inspectionFlags) {
+      record[field] = housingCheck_(page, x, inspectionY, 7, 8) ? 1 : '';
     }
 
-    const [addressLabel, cityLabel, typeLabel, inspectionLabel, descriptionLabel] = sections;
+    record.description = housingValue_(page, description.y - 3, description.y - 42, 35, 600);
+    if (/^none$/i.test(record.description)) record.description = '';
 
-    record.address_street = housingText_(housingBetween_(page, addressLabel.y - 1, cityLabel.y + 2, 30, 780));
+    // Do not convert unknown checkbox values to zero automatically.
+    record.reviewWarnings.push('Verify inspection authority flags before export.');
 
-    const locationItems = housingBetween_(page, cityLabel.y - 1, typeLabel.y + 2);
-    const locationColumns = [
-      [30, 190, 'city'], [190, 320, 'state'], [320, 450, 'zip'], [450, 780, 'county']
-    ];
-
-    for (const [minX, maxX, key] of locationColumns) {
-      record[key] = housingText_(locationItems.filter(item => item.x >= minX && item.x < maxX));
-    }
-
-    const typeItems = housingBetween_(page, typeLabel.y - 1, inspectionLabel.y + 2);
-    const typeText = housingText_([...typeItems]);
-    const unitsMatch = typeText.match(/\b(\d+)\s+(\d+)\b/);
-
-    if (unitsMatch) {
-      record.num_units = unitsMatch[1];
-      record.total_occupancy = unitsMatch[2];
-    } else {
-      record.reviewWarnings.push('Could not confidently identify units and occupancy.');
-    }
-
-    // Checkbox glyphs may be represented differently by PDF.js.
-    // Leave type and inspection flags unknown until checked visually.
-    record.reviewWarnings.push('Verify housing type and inspection authorities against the PDF.');
-
-    record.description = housingText_(housingBetween_(
-      page, descriptionLabel.y - 1, end?.y ?? 55, 30, 780
-    ));
-
-    records.push(record);
+    if (record.address_street) records.push(record);
   }
 
   return records;
@@ -553,32 +597,58 @@ function parseAddendumBHousing_(pages) {
   for (const page of pages) {
     if (!/Form ETA-790A Addendum B/i.test(page.text)) continue;
 
-    const section = housingFind_(page, /^D\.\s*Additional Housing Information/i);
-    if (!section) continue;
+    const header = housingLabel_(page, /2\.\s*Physical Location/i);
+    if (!header) continue;
 
-    // Some Addendum B pages contain only the D heading at the bottom.
-    // Others contain the actual housing table with different positioning.
-    const tableHeader = housingFind_(page, /2\.\s*Physical Location/i);
-    if (!tableHeader) continue;
-
-    const locationItems = (page.items || [])
-      .filter(item => item.x >= 175 && item.x < 405 && item.y < tableHeader.y - 8 && item.y > 75)
+    // Housing tables can have multiple rows and unused blank rows.
+    // Each populated address begins at the left edge of the location column.
+    const addressStarts = (page.items || [])
+      .filter(i => i.x >= 140 && i.x < 250 && i.y < header.y - 8 && i.y > 80)
+      .filter(i => /^\d+\s+\S/.test(i.text.trim()))
       .sort((a, b) => b.y - a.y);
 
-    // Group address lines into entries using the city/state/ZIP line.
-    const cityLine = /,\s*[A-Za-z ]+\s+\d{5}/;
+    for (let index = 0; index < addressStarts.length; index++) {
+      const start = addressStarts[index];
+      const next = addressStarts[index + 1];
 
-    for (let i = 0; i < locationItems.length; i++) {
-      if (!cityLine.test(locationItems[i].text)) continue;
+      // Each row is bounded by the next populated housing address.
+      const top = start.y + 8;
+      const bottom = next ? (start.y + next.y) / 2 : Math.max(80, start.y - 65);
 
-      const anchor = locationItems[i];
-      const nearby = locationItems.filter(item => Math.abs(item.y - anchor.y) < 35);
-      const rawAddress = housingText_(nearby);
+      const locationItems = housingItems_(page, top, bottom, 140, 350);
+      const lines = locationItems.map(i => housingClean_(i.text)).filter(Boolean);
+
+      if (!lines.length) continue;
 
       const record = makeEmptyHousingRecord_('Addendum B', page.pageNumber);
-      parseHousingAddress_(rawAddress, record);
 
-      record.reviewWarnings.push('Verify Addendum B housing type, occupancy, description, and inspection authorities.');
+      record.address_street = lines[0];
+
+      const countyIndex = lines.findIndex(line => /\bCOUNTY\b/i.test(line));
+      if (countyIndex !== -1) {
+        record.county = lines[countyIndex].replace(/\s+COUNTY$/i, ' County');
+      }
+
+      const location = lines.slice(1, countyIndex === -1 ? undefined : countyIndex).join(' ');
+      const match = location.match(/^(.+?),\s*(.+?)\s+(\d{5})(?:-\d{4})?$/);
+
+      if (match) {
+        record.city = match[1];
+        record.state = match[2];
+        record.zip = match[3];
+      } else {
+        record.reviewWarnings.push('Review address components.');
+      }
+
+      const units = housingItems_(page, top, bottom, 530, 575)
+        .find(i => /^\d+$/.test(i.text.trim()));
+      const occupancy = housingItems_(page, top, bottom, 575, 640)
+        .find(i => /^\d+$/.test(i.text.trim()));
+
+      record.num_units = units?.text || '';
+      record.total_occupancy = occupancy?.text || '';
+
+      record.reviewWarnings.push('Verify housing type and inspection authority checkboxes.');
       records.push(record);
     }
   }
