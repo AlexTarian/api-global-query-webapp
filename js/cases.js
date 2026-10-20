@@ -28,7 +28,7 @@ function renderJobOrderTab_() {
 
   switch (activeJobOrderTab) {
     case 'rates':
-      container.innerHTML = '<h3>Addendum A</h3><p>Wage extraction is being configured.</p>';
+      renderAddendumARates_(activeJobOrderData.rates);
       break;
 
     case 'worksites':
@@ -194,11 +194,20 @@ async function openExtractedCaseView_() {
     activeJobOrderData = {
       caseNum,
       pages,
-      rates: [],
+      rates: parseAddendumARates_(pages),
       worksites: parseAddendumBWorksites_(pages),
       housing: [],
-      terms: []
+      terms: [],
+      exportReady: {
+        rates: false,
+        worksites: false,
+        housing: false,
+        terms: false
+      }
     };
+
+    console.log('Addendum A parsed rates:', activeJobOrderData.rates.length);
+    console.table(activeJobOrderData.rates);
 
     inspectAddendumALayout_(pages);
 
@@ -337,6 +346,152 @@ function getPdfTextRows_(page, tolerance = 3) {
       items: row.items.sort((a, b) => a.x - b.x),
       text: row.items.map(item => item.text.trim()).join(' ')
     }));
+}
+
+function parseAddendumARates_(pages) {
+  const rates = [];
+
+  for (const page of getAddendumAPages_(pages)) {
+    const items = (page.items || []).filter(item => item.text?.trim());
+
+    // The Addendum A table has ten slots per page, each approximately
+    // 40.08 PDF points tall. Detect slots using the activity column.
+    const activities = items
+      .filter(item => item.x >= 80 && item.x < 230 && item.y > 85 && item.y < 485)
+      .sort((a, b) => b.y - a.y || a.x - b.x);
+
+    const groups = [];
+
+    for (const item of activities) {
+      const existing = groups.find(group => Math.abs(group.anchorY - item.y) < 22);
+
+      if (existing) {
+        existing.activityItems.push(item);
+      } else {
+        groups.push({ anchorY: item.y, activityItems: [item] });
+      }
+    }
+
+    for (const group of groups) {
+      const anchorY = group.anchorY;
+
+      // Include content in the same table slot, including the wage
+      // digits printed below the activity description.
+      const slotItems = items.filter(item =>
+        item.y <= anchorY + 9 &&
+        item.y > anchorY - 29
+      );
+
+      const column = (minX, maxX) => slotItems
+        .filter(item => item.x >= minX && item.x < maxX)
+        .sort((a, b) => b.y - a.y || a.x - b.x)
+        .map(item => item.text.trim())
+        .join(' ')
+        .trim();
+
+      const activity = group.activityItems
+        .sort((a, b) => b.y - a.y || a.x - b.x)
+        .map(item => item.text.trim())
+        .join(' ')
+        .trim();
+
+      const cropId = column(35, 80);
+
+      // Wage values are printed as two separate numeric components,
+      // generally at x=242 and x=275.48.
+      const wageItems = slotItems.filter(item =>
+        item.x >= 235 && item.x < 295 &&
+        /^\d{1,3}$/.test(item.text.trim())
+      ).sort((a, b) => b.y - a.y || a.x - b.x);
+
+      let wageOffer = '';
+
+      if (wageItems.length >= 2) {
+        const dollars = wageItems.find(item => item.x < 260);
+        const cents = wageItems.find(item => item.x >= 260);
+
+        if (dollars && cents) {
+          wageOffer = `${Number(dollars.text)}.${cents.text.trim().padStart(2, '0')}`;
+        }
+      }
+
+      const perText = column(295, 335);
+      const per = /piece\s*rate/i.test(perText) ? 'Piece Rate'
+        : /\bhour\b/i.test(perText) ? 'Hour'
+        : perText;
+
+      const unitsInfo = column(335, 780);
+
+      if (!activity || !wageOffer) continue;
+
+      rates.push({
+        id: '',
+        crop_id: cropId,
+        crop_or_ag_activity: activity,
+        wage_offer: wageOffer,
+        per,
+        units_rate_info: unitsInfo,
+        default_sort_order: rates.length + 1,
+        sourcePage: page.pageNumber
+      });
+    }
+  }
+
+  return rates;
+}
+
+function renderAddendumARates_(rates) {
+  const container = document.getElementById('modalExtractedContent');
+  container.replaceChildren();
+
+  const heading = document.createElement('h4');
+  heading.textContent = `Addendum A — Wage Rates (${rates.length})`;
+  container.appendChild(heading);
+
+  if (!rates.length) {
+    const message = document.createElement('p');
+    message.textContent = 'No Addendum A wage rates were found.';
+    container.appendChild(message);
+    return;
+  }
+
+  rates.forEach((rate, index) => {
+    const card = document.createElement('div');
+    card.className = 'modal-info-card';
+
+    const title = document.createElement('div');
+    title.className = 'joItemHeading';
+    title.textContent = `Rate ${index + 1}: ${rate.crop_or_ag_activity}`;
+
+    const details = document.createElement('div');
+    details.className = 'jo-worksite-details';
+
+    const fields = [
+      ['Crop ID', rate.crop_id],
+      ['Wage Offer', rate.wage_offer],
+      ['Per', rate.per],
+      ['Units / Rate Info', rate.units_rate_info]
+    ];
+
+    fields.forEach(([label, value]) => {
+      if (value === null || value === undefined || value === '') return;
+
+      const line = document.createElement('div');
+      line.className = 'jo-worksite-field';
+
+      const strong = document.createElement('strong');
+      strong.textContent = `${label}:`;
+
+      const span = document.createElement('span');
+      span.textContent = String(value);
+
+      line.append(strong, span);
+      details.appendChild(line);
+    });
+
+    card.append(title, details);
+    container.appendChild(card);
+  });
 }
 
 function inspectAddendumALayout_(pages) {
