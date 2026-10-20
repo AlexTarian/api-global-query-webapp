@@ -150,7 +150,7 @@ function addJobOrderCsvButton_(container, tab) {
 function setCaseModalView_(view) {
   caseModalView = view;
 
-  document.getElementById('modal-body').hidden = view !== 'details';
+  document.getElementById('modalCaseDetailsView').hidden = view !== 'details';
   document.getElementById('modalExtractedView').hidden = view !== 'extracted';
   document.getElementById('extractBackButton').hidden = view !== 'extracted';
 }
