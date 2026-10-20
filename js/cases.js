@@ -27,11 +27,10 @@ function renderJobOrderTab_() {
   const container = document.getElementById('modalExtractedContent');
 
   switch (activeJobOrderTab) {
-    
     case 'rates':
-      container.innerHTML = '<h3>Addendum A</h3><p>Addendum A Records coming soon.</p>';
-    break;
-      
+      container.innerHTML = '<h3>Addendum A</h3><p>Wage extraction is being configured.</p>';
+      break;
+
     case 'worksites':
       renderAddendumBWorksites_(activeJobOrderData.worksites);
       break;
@@ -41,9 +40,71 @@ function renderJobOrderTab_() {
       break;
 
     case 'terms':
-      container.innerHTML = '<h3>Addendum C</h3><p>Addendum C Records coming soon.</p>';
+      container.innerHTML = '<h3>Addendum C</h3><p>Material terms extraction is coming next.</p>';
       break;
   }
+
+  // Only enable CSV downloads once a tab has export-ready records.
+  const exportReady = activeJobOrderData.exportReady?.[activeJobOrderTab] === true;
+  if (exportReady) addJobOrderCsvButton_(container, activeJobOrderTab);
+}
+
+const JOB_ORDER_CSV_COLUMNS = {
+  rates: ['id', 'crop_id', 'crop_or_ag_activity', 'wage_offer', 'per', 'units_rate_info', 'default_sort_order'],
+  worksites: ['id', 'address_street', 'city', 'county', 'state', 'zip', 'name_of_business', 'nickname'],
+  housing: [
+    'id', 'address_street', 'city', 'county', 'state', 'zip', 'description', 'type',
+    'num_units', 'total_occupancy', 'nickname', 'is_inspection_authority_local',
+    'is_inspection_authority_swa', 'is_inspection_authority_other_state',
+    'is_inspection_authority_federal', 'is_inspection_authority_other', 'inspection_authority_other'
+  ],
+  terms: ['id', 'section', 'summary', 'details']
+};
+
+function buildJobOrderCsv_(tab, rows) {
+  const columns = JOB_ORDER_CSV_COLUMNS[tab];
+  if (!columns) throw new Error(`Unknown job order export type: ${tab}`);
+
+  return [
+    columns.map(escapeCsvValue_).join(','),
+    ...rows.map(row => columns.map(column => escapeCsvValue_(column === 'id' ? '' : row[column] ?? '')).join(','))
+  ].join('\r\n');
+}
+
+function downloadJobOrderCsv_(tab = activeJobOrderTab) {
+  if (!activeJobOrderData) return;
+
+  const rows = activeJobOrderData[tab] || [];
+  if (!rows.length) {
+    alert('There are no extracted records to export from this tab.');
+    return;
+  }
+
+  const csv = buildJobOrderCsv_(tab, rows);
+  const filename = `${activeJobOrderData.caseNum}_${tab}.csv`;
+  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function addJobOrderCsvButton_(container, tab) {
+  const rows = activeJobOrderData?.[tab] || [];
+  const button = document.createElement('button');
+
+  button.type = 'button';
+  button.className = 'btn jo-download-btn';
+  button.textContent = `↓ Download CSV (${rows.length})`;
+  button.disabled = !rows.length;
+  button.addEventListener('click', () => downloadJobOrderCsv_(tab));
+
+  container.appendChild(button);
 }
 
 function setCaseModalView_(view) {
@@ -133,9 +194,13 @@ async function openExtractedCaseView_() {
     activeJobOrderData = {
       caseNum,
       pages,
+      rates: [],
       worksites: parseAddendumBWorksites_(pages),
       housing: [],
+      terms: []
     };
+
+    inspectAddendumALayout_(pages);
 
     activeJobOrderTab = 'worksites';
     renderJobOrderTab_();
@@ -239,6 +304,68 @@ function parseAddendumBWorksites_(pages) {
   }
 
   return worksites;
+}
+
+function getAddendumAPages_(pages) {
+  return pages.filter(page =>
+    /(?:Form\s+)?ETA-790A\s+Addendum\s+A/i.test(page.text)
+  );
+}
+
+function getPdfTextRows_(page, tolerance = 3) {
+  const rows = [];
+
+  const sorted = [...(page.items || [])]
+    .filter(item => item.text?.trim())
+    .sort((a, b) => b.y - a.y || a.x - b.x);
+
+  for (const item of sorted) {
+    let row = rows.find(row => Math.abs(row.y - item.y) <= tolerance);
+
+    if (!row) {
+      row = { y: item.y, items: [] };
+      rows.push(row);
+    }
+
+    row.items.push(item);
+  }
+
+  return rows
+    .sort((a, b) => b.y - a.y)
+    .map(row => ({
+      y: row.y,
+      items: row.items.sort((a, b) => a.x - b.x),
+      text: row.items.map(item => item.text.trim()).join(' ')
+    }));
+}
+
+function inspectAddendumALayout_(pages) {
+  const addendumPages = getAddendumAPages_(pages);
+
+  console.log(`Found ${addendumPages.length} Addendum A page(s).`);
+
+  addendumPages.slice(0, 2).forEach(page => {
+    const rows = getPdfTextRows_(page);
+
+    console.group(`Addendum A — PDF page ${page.pageNumber}`);
+
+    console.table(rows.map(row => ({
+      y: row.y,
+      text: row.text
+    })));
+
+    console.table(
+      rows.flatMap(row => row.items.map(item => ({
+        x: item.x,
+        y: item.y,
+        text: item.text
+      })))
+    );
+
+    console.groupEnd();
+  });
+
+  return addendumPages;
 }
 
 function renderAddendumBWorksites_(worksites) {
@@ -564,6 +691,9 @@ function clearCaseModal_() {
   churnBanner.className = 'churn-banner hidden';
   churnBanner.innerHTML = '';
 
+  jobOrderExtractRequest++;
+  activeJobOrderData = null;
+  activeJobOrderTab = 'worksites';
   activeCaseModalRow = null;
   setCaseModalView_('details');
   document.getElementById('modalExtractedContent').textContent = 'No job order loaded.';
