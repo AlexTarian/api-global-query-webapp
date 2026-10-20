@@ -212,6 +212,7 @@ async function openExtractedCaseView_() {
     console.table(activeJobOrderData.housing);
 
     inspectAddendumALayout_(pages);
+    inspectAddendumBHousingCheckboxes_(pages);
 
     activeJobOrderTab = 'worksites';
     renderJobOrderTab_();
@@ -508,14 +509,19 @@ function housingRowLabel_(page, pattern, belowY = Infinity) {
     .find(row => row.y < belowY && pattern.test(row.text));
 }
 
-function housingCheck_(page, x, y, toleranceX = 7, toleranceY = 7) {
-  const marks = housingItems_(page, y + toleranceY, y - toleranceY, x - toleranceX, x + toleranceX);
+function housingCheck_(page, x, y, toleranceX = 8, toleranceY = 8) {
+  const items = housingItems_(page, y + toleranceY, y - toleranceY, x - toleranceX, x + toleranceX);
 
-  // PDF.js may represent a checked box as a control character,
-  // checkmark, or a symbol-font character.
-  const checked = marks.some(i => /[\u0001-\u001F✓✔☑]/.test(i.text));
+  // Checked boxes may appear as an overlaid "4" in the PDF's symbol font.
+  const checked = items.some(item =>
+    item.text.trim() === '4' ||
+    /[✓✔☑\u0001-\u001F]/.test(item.text)
+  );
 
-  return checked ? 1 : '';
+  // An unchecked checkbox glyph confirms the field exists.
+  const hasBox = items.some(item => /[□☐]/.test(item.text));
+
+  return checked ? 1 : hasBox ? 0 : '';
 }
 
 function housingSetAddress_(record, street, location, county) {
@@ -573,6 +579,14 @@ function parseMainHousing_(pages) {
       );
     }
 
+    // Some PDFs place the ZIP and county in the same text item.
+    const zipCountyMatch = record.zip.match(/^(\d{5})(?:-\d{4})?\s+(.+)$/);
+
+    if (zipCountyMatch) {
+      record.zip = zipCountyMatch[1];
+      record.county = zipCountyMatch[2].replace(/\s+COUNTY$/i, ' County');
+    }
+
     const numericItems = housingItems_(page, type.y - 2, inspection.y + 3, 390, 600)
       .filter(item => /^\d+$/.test(item.text.trim()));
 
@@ -585,7 +599,34 @@ function parseMainHousing_(pages) {
 
     if (/^none$/i.test(record.description)) record.description = '';
 
-    record.reviewWarnings.push('Verify housing type and inspection authority checkboxes.');
+    // Housing type: employer-provided versus rental/public.
+    const employerProvided = housingCheck_(page, 71.94, type.y - 10);
+    const rentalPublic = housingCheck_(page, 227.95, type.y - 10);
+
+    if (employerProvided === 1 && rentalPublic === 0) {
+      record.type = 1;
+    } else if (rentalPublic === 1 && employerProvided === 0) {
+      record.type = 2;
+    } else {
+      record.reviewWarnings.push('Verify housing type.');
+    }
+
+    // Inspection authority checkboxes.
+    record.is_inspection_authority_local = housingCheck_(page, 71.94, inspection.y - 12);
+    record.is_inspection_authority_swa = housingCheck_(page, 153.48, inspection.y - 12);
+    record.is_inspection_authority_other_state = housingCheck_(page, 196.98, inspection.y - 12);
+    record.is_inspection_authority_federal = housingCheck_(page, 303.06, inspection.y - 12);
+    record.is_inspection_authority_other = housingCheck_(page, 393.60, inspection.y - 12);
+
+    if ([
+      record.is_inspection_authority_local,
+      record.is_inspection_authority_swa,
+      record.is_inspection_authority_other_state,
+      record.is_inspection_authority_federal,
+      record.is_inspection_authority_other
+    ].some(value => value === '')) {
+      record.reviewWarnings.push('Verify inspection authority.');
+    }
 
     if (record.address_street) records.push(record);
   }
@@ -656,6 +697,43 @@ function parseAddendumBHousing_(pages) {
   }
 
   return records;
+}
+
+function inspectAddendumBHousingCheckboxes_(pages) {
+  for (const page of pages) {
+    if (!/Form\s+ETA-790A\s+Addendum\s+B/i.test(page.text)) continue;
+
+    const header = housingLabel_(page, /2\.\s*Physical Location/i);
+    if (!header) continue;
+
+    console.group(`Addendum B Housing Checkboxes — PDF Page ${page.pageNumber}`);
+
+    // Show the table headings and their coordinates.
+    console.table(
+      getPdfTextRows_(page, 3)
+        .filter(row => row.y < header.y + 25 && row.y > 80)
+        .map(row => ({ y: row.y, text: row.text }))
+    );
+
+    // Show individual text items, including checkbox glyphs and checkmarks.
+    console.table(
+      (page.items || [])
+        .filter(item => item.y < header.y - 8 && item.y > 80)
+        .filter(item =>
+          /[□☐✓✔☑\u0001-\u001F]/.test(item.text) ||
+          item.text.trim() === '4' ||
+          /Employer|Rental|public|Local|SWA|State|Federal|Other|authority/i.test(item.text)
+        )
+        .sort((a, b) => b.y - a.y || a.x - b.x)
+        .map(item => ({
+          x: item.x,
+          y: item.y,
+          text: JSON.stringify(item.text)
+        }))
+    );
+
+    console.groupEnd();
+  }
 }
 
 function parseJobOrderHousing_(pages) {
