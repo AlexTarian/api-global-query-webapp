@@ -524,6 +524,18 @@ function housingCheck_(page, x, y, toleranceX = 8, toleranceY = 8) {
   return checked ? 1 : hasBox ? 0 : '';
 }
 
+function housingCheckByLabel_(page, label, top, bottom) {
+  const items = housingItems_(page, top, bottom);
+  const labelItem = items.find(item => label.test(housingClean_(item.text)));
+
+  if (!labelItem) return '';
+
+  // The checkbox is approximately 10.5 PDF points left of its label.
+  const boxX = labelItem.x - 10.5;
+
+  return housingCheck_(page, boxX, labelItem.y, 6, 5);
+}
+
 function housingSetAddress_(record, street, location, county) {
   record.address_street = housingClean_(street);
   record.county = housingClean_(county).replace(/\s+COUNTY$/i, ' County');
@@ -691,7 +703,34 @@ function parseAddendumBHousing_(pages) {
       record.num_units = units?.text || '';
       record.total_occupancy = occupancy?.text || '';
 
-      record.reviewWarnings.push('Verify housing type and inspection authority checkboxes.');
+      // Identify housing type using the checkboxes within this record's row.
+      const employerProvided = housingCheckByLabel_(page, /^Employer-provided$/i, top, bottom);
+      const rentalPublic = housingCheckByLabel_(page, /^Rental or public$/i, top, bottom);
+
+      if (employerProvided === 1 && rentalPublic === 0) {
+        record.type = 1;
+      } else if (rentalPublic === 1 && employerProvided === 0) {
+        record.type = 2;
+      } else {
+        record.reviewWarnings.push('Verify housing type.');
+      }
+
+      // Identify inspection authorities for this housing record.
+      record.is_inspection_authority_local = housingCheckByLabel_(page, /^Local authority$/i, top, bottom);
+      record.is_inspection_authority_swa = housingCheckByLabel_(page, /^SWA$/i, top, bottom);
+      record.is_inspection_authority_other_state = housingCheckByLabel_(page, /^Other State authority$/i, top, bottom);
+      record.is_inspection_authority_federal = housingCheckByLabel_(page, /^Federal authority$/i, top, bottom);
+      record.is_inspection_authority_other = housingCheckByLabel_(page, /^Other$/i, top, bottom);
+
+      if ([
+        record.is_inspection_authority_local,
+        record.is_inspection_authority_swa,
+        record.is_inspection_authority_other_state,
+        record.is_inspection_authority_federal,
+        record.is_inspection_authority_other
+      ].some(value => value === '')) {
+        record.reviewWarnings.push('Verify inspection authority.');
+      }
       records.push(record);
     }
   }
@@ -776,7 +815,7 @@ function renderJobOrderHousing_(housing) {
       ['State', record.state],
       ['ZIP', record.zip],
       ['Description', record.description],
-      ['Housing Type', record.type === 1 || record.type === '1' ? 'Owned/Rented' : record.type === 2 || record.type === '2' ? 'Public Accommodation' : 'Needs review'],
+      ['Housing Type', record.type === 1 ? 'Employer-Owned' : record.type === 2 ? 'Rented' : 'Needs review'],
       ['Units', record.num_units],
       ['Total Occupancy', record.total_occupancy],
       ['Source Page', record.sourcePage]
