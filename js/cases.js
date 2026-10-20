@@ -142,7 +142,7 @@ function buildJobOrderCsv_(tab, rows) {
 
   return [
     columns.map(escapeCsvValue_).join(','),
-    ...exportRows.map(row => columns.map(column => csvEscape_(row[column])).join(','))
+    ...exportRows.map(row => columns.map(column => escapeCsvValue_(row[column])).join(','))
   ].join('\r\n');
 }
 
@@ -1199,8 +1199,6 @@ function renderAddendumBWorksites_(worksites) {
 
     addressRow.append(addressText, makeJobOrderCopyAddressButton_(address));
     card.append(title, addressRow, details);
-    container.appendChild(card);
-    
     container.appendChild(card);
   });
 }
