@@ -898,7 +898,7 @@ function renderJobOrderHousing_(housing) {
     details.className = 'jo-worksite-details';
 
     const fields = [
-      ['Housing Type', record.type === 1 ? 'Employer-Owned' : record.type === 2 ? 'Rented' : 'Needs review'],
+      ['Housing Type', record.type === 1 ? 'Owned' : record.type === 2 ? 'Rented' : 'Needs review'],
       ['Units', record.num_units],
       ['Total Occupancy', record.total_occupancy],
     ];
