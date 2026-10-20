@@ -309,8 +309,7 @@ function parseAddendumBWorksites_(pages) {
         additionalInfo: columnText(400, 600),
         beginDate: columnText(600, 655),
         endDate: columnText(655, 700),
-        workers: Number(columnText(700, 760)) || null,
-        sourcePage: page.pageNumber
+        workers: Number(columnText(700, 760)) || null
       });
     }
   }
@@ -435,7 +434,6 @@ function parseAddendumARates_(pages) {
         per,
         units_rate_info: unitsInfo,
         default_sort_order: rates.length + 1,
-        sourcePage: page.pageNumber
       });
     }
   }
@@ -450,7 +448,7 @@ function makeEmptyHousingRecord_(source, pageNumber) {
     is_inspection_authority_local: '', is_inspection_authority_swa: '',
     is_inspection_authority_other_state: '', is_inspection_authority_federal: '',
     is_inspection_authority_other: '', inspection_authority_other: '',
-    source, sourcePage: pageNumber, reviewWarnings: []
+    source, reviewWarnings: []
   };
 }
 
@@ -803,7 +801,7 @@ function renderJobOrderHousing_(housing) {
 
     const title = document.createElement('div');
     title.className = 'joItemHeading';
-    title.textContent = `Housing ${index + 1} — ${record.source}`;
+    title.textContent = `Housing ${index + 1}`;
 
     const details = document.createElement('div');
     details.className = 'jo-worksite-details';
@@ -818,7 +816,6 @@ function renderJobOrderHousing_(housing) {
       ['Housing Type', record.type === 1 ? 'Employer-Owned' : record.type === 2 ? 'Rented' : 'Needs review'],
       ['Units', record.num_units],
       ['Total Occupancy', record.total_occupancy],
-      ['Source Page', record.sourcePage]
     ];
 
     fields.forEach(([label, value]) => {
@@ -926,7 +923,6 @@ function parseAddendumCTerms_(pages) {
         section,
         summary: category,
         details,
-        sourcePage: page.pageNumber
       });
     }
   }
@@ -939,7 +935,7 @@ function renderAddendumCTerms_(terms) {
   container.replaceChildren();
 
   const heading = document.createElement('h4');
-  heading.textContent = `Addendum C — Material Terms (${terms.length})`;
+  heading.textContent = `Addendum C (${terms.length})`;
   container.appendChild(heading);
 
   if (!terms.length) {
@@ -960,22 +956,15 @@ function renderAddendumCTerms_(terms) {
     const details = document.createElement('div');
     details.className = 'jo-worksite-details';
 
-    const summary = document.createElement('div');
-    summary.className = 'jo-worksite-field';
-
-    const summaryLabel = document.createElement('strong');
-    summaryLabel.textContent = 'Summary:';
-
-    const summaryText = document.createElement('span');
-    summaryText.textContent = term.summary;
-
-    summary.append(summaryLabel, summaryText);
+    const sectionName = document.createElement('div');
+    sectionName.className = 'jo-term-section-name';
+    sectionName.textContent = term.summary || 'Section name unavailable';
 
     const body = document.createElement('p');
     body.className = 'jo-term-details';
     body.textContent = term.details;
 
-    details.append(summary, body);
+    details.append(sectionName, body);
     card.append(title, details);
     container.appendChild(card);
   });
