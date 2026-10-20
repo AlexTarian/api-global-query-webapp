@@ -836,6 +836,19 @@
   margin-bottom: 12px;
 }
 
+.jo-term-details {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+
+.jo-housing-warning {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  color: #b7791f;
+  white-space: normal;
+}
+
 @media (max-width: 600px) {
   #agenciesTable {
     min-width: 0;
