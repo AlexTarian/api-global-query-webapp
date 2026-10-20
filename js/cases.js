@@ -83,6 +83,45 @@ function makeJobOrderCopyAddressButton_(address) {
   return button;
 }
 
+function normalizeWorksiteForCsv_(site) {
+  const address = String(site.address || '').replace(/\s+/g, ' ').trim();
+
+  // Expected format:
+  // Street, City, State ZIP, COUNTY
+  const parts = address.split(',').map(part => part.trim()).filter(Boolean);
+
+  let street = '';
+  let city = '';
+  let state = '';
+  let zip = '';
+  let county = '';
+
+  if (parts.length >= 4) {
+    county = parts.pop().replace(/\s+COUNTY$/i, ' County');
+    const stateZip = parts.pop();
+    city = parts.pop();
+    street = parts.join(', ');
+
+    const match = stateZip.match(/^(.+?)\s+(\d{5})(?:-\d{4})?$/);
+
+    if (match) {
+      state = match[1].trim();
+      zip = match[2];
+    }
+  }
+
+  return {
+    id: '',
+    address_street: site.address_street || street,
+    city: site.city || city,
+    county: site.county || county,
+    state: site.state || state,
+    zip: site.zip || zip,
+    name_of_business: site.name_of_business || site.business || '',
+    nickname: site.nickname || ''
+  };
+}
+
 const JOB_ORDER_CSV_COLUMNS = {
   rates: ['id', 'crop_id', 'crop_or_ag_activity', 'wage_offer', 'per', 'units_rate_info', 'default_sort_order'],
   worksites: ['id', 'address_street', 'city', 'county', 'state', 'zip', 'name_of_business', 'nickname'],
@@ -99,9 +138,11 @@ function buildJobOrderCsv_(tab, rows) {
   const columns = JOB_ORDER_CSV_COLUMNS[tab];
   if (!columns) throw new Error(`Unknown job order export type: ${tab}`);
 
+  const exportRows = tab === 'worksites' ? rows.map(normalizeWorksiteForCsv_) : rows;
+
   return [
     columns.map(escapeCsvValue_).join(','),
-    ...rows.map(row => columns.map(column => escapeCsvValue_(column === 'id' ? '' : row[column] ?? '')).join(','))
+    ...exportRows.map(row => columns.map(column => csvEscape_(row[column])).join(','))
   ].join('\r\n');
 }
 
