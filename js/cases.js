@@ -937,6 +937,25 @@ function getAddendumCPages_(pages) {
   );
 }
 
+const ADDENDUM_C_CATEGORIES = [
+  'Job Duties',
+  'Pay Deductions',
+  'Job Requirements',
+  'Meal Provision',
+  'Daily Transportation',
+  'Inbound/Outbound Transportation',
+  'Referral and Hiring Instructions'
+];
+
+function getAddendumCCategory_(sectionName) {
+  const text = String(sectionName || '').trim();
+
+  return ADDENDUM_C_CATEGORIES.find(category =>
+    text.toLowerCase() === category.toLowerCase() ||
+    text.toLowerCase().startsWith(`${category.toLowerCase()} -`)
+  ) || '';
+}
+
 function getAddendumCBodyLines_(page) {
   const rows = getPdfTextRows_(page, 3);
 
