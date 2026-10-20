@@ -849,6 +849,11 @@
   white-space: normal;
 }
 
+.jo-term-section-name {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
 @media (max-width: 600px) {
   #agenciesTable {
     min-width: 0;
