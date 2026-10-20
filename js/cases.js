@@ -532,8 +532,22 @@ function parseMainHousing_(pages) {
   const records = [];
 
   for (const page of pages) {
-    if (/Form ETA-790A Addendum [ABC]/i.test(page.text)) continue;
-    if (!/D\.\s*Housing Information/i.test(page.text)) continue;
+    const rows = getPdfTextRows_(page, 3);
+    const pageHeader = rows.slice(0, 8).map(row => row.text).join(' ');
+
+    // Exclude actual addendum pages, not pages that merely mention an addendum.
+    if (/Form\s+ETA-790A\s+Addendum\s+[ABC]/i.test(pageHeader)) continue;
+
+    // Look for the main form's housing address label.
+    const addressRow = rows.find(row => /\bHousing\s+Address\b/i.test(row.text));
+    if (!addressRow) continue;
+
+    console.log('Potential main housing page:', page.pageNumber, {
+      addressRow: addressRow.text,
+      housingRows: rows.filter(row =>
+        /Housing|City|Type of Housing|Identify the entity/i.test(row.text)
+      ).map(row => ({ y: row.y, text: row.text }))
+    });
 
     const heading = housingLabel_(page, /Housing Information/i);
     const address = housingLabel_(page, /Housing Address/i);
