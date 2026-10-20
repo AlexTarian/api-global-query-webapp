@@ -56,8 +56,9 @@ function jobOrderAddressLine_(record) {
   const city = record.city || '';
   const state = record.state || '';
   const zip = record.zip || '';
+  const county = record.county || '';
 
-  return [street, city, [state, zip].filter(Boolean).join(' ')]
+  return [street, city, [state, zip, county].filter(Boolean).join(' ')]
     .filter(Boolean).join(', ').replace(/\s+/g, ' ').trim();
 }
 
@@ -149,7 +150,7 @@ function addJobOrderCsvButton_(container, tab) {
 function setCaseModalView_(view) {
   caseModalView = view;
 
-  document.getElementById('modalCaseDetailsView').hidden = view !== 'details';
+  document.getElementById('modal-body').hidden = view !== 'details';
   document.getElementById('modalExtractedView').hidden = view !== 'extracted';
   document.getElementById('extractBackButton').hidden = view !== 'extracted';
 }
@@ -856,12 +857,6 @@ function renderJobOrderHousing_(housing) {
     details.className = 'jo-worksite-details';
 
     const fields = [
-      ['Street', record.address_street],
-      ['City', record.city],
-      ['County', record.county],
-      ['State', record.state],
-      ['ZIP', record.zip],
-      ['Description', record.description],
       ['Housing Type', record.type === 1 ? 'Employer-Owned' : record.type === 2 ? 'Rented' : 'Needs review'],
       ['Units', record.num_units],
       ['Total Occupancy', record.total_occupancy],
@@ -949,13 +944,13 @@ function parseAddendumCTerms_(pages) {
         .filter(item => !isFieldHeading(clean(item.text)));
 
       const section = clean(headerItems
-        .filter(item => item.x >= 170 && item.x < 330)
+        .filter(item => item.x >= 120 && item.x < 190)
         .map(item => item.text)
         .join(' '))
         .match(/\b[A-Z]\.\d+[a-z]?\b/i)?.[0] || '';
 
       const category = clean(headerItems
-        .filter(item => item.x >= 580)
+        .filter(item => item.x >= 350 && item.x < 650)
         .map(item => item.text)
         .join(' '));
 
