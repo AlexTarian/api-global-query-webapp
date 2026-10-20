@@ -503,6 +503,11 @@ function housingLabel_(page, pattern) {
   return (page.items || []).find(i => pattern.test(housingClean_(i.text)));
 }
 
+function housingRowLabel_(page, pattern, belowY = Infinity) {
+  return getPdfTextRows_(page, 3)
+    .find(row => row.y < belowY && pattern.test(row.text));
+}
+
 function housingCheck_(page, x, y, toleranceX = 7, toleranceY = 7) {
   const marks = housingItems_(page, y + toleranceY, y - toleranceY, x - toleranceX, x + toleranceX);
 
@@ -532,37 +537,19 @@ function parseMainHousing_(pages) {
   const records = [];
 
   for (const page of pages) {
-    const rows = getPdfTextRows_(page, 3);
-    const pageHeader = rows.slice(0, 8).map(row => row.text).join(' ');
+    const heading = housingRowLabel_(page, /D\.\s*Housing Information/i);
+    if (!heading) continue;
 
-    // Exclude actual addendum pages, not pages that merely mention an addendum.
-    if (/Form\s+ETA-790A\s+Addendum\s+[ABC]/i.test(pageHeader)) continue;
-
-    // Look for the main form's housing address label.
-    const addressRow = rows.find(row => /\bHousing\s+Address\b/i.test(row.text));
-    if (!addressRow) continue;
-
-    console.log('Potential main housing page:', page.pageNumber, {
-      addressRow: addressRow.text,
-      housingRows: rows.filter(row =>
-        /Housing|City|Type of Housing|Identify the entity/i.test(row.text)
-      ).map(row => ({ y: row.y, text: row.text }))
-    });
-
-    const heading = housingLabel_(page, /Housing Information/i);
-    const address = housingLabel_(page, /Housing Address/i);
-    const city = housingLabel_(page, /City/i);
-    const type = housingLabel_(page, /Type of Housing/i);
-    const inspection = housingLabel_(page, /Identify the entity/i);
-    const description = housingLabel_(page, /Additional Housing Information/i);
-
-    console.log('Main housing labels:', {
-      page: page.pageNumber,
-      heading, address, city, type, inspection, description
-    });
+    const address = housingRowLabel_(page, /Housing Address\/Location/i, heading.y);
+    const city = housingRowLabel_(page, /2\s*\.\s*City/i, address?.y);
+    const type = housingRowLabel_(page, /Type of Housing/i, city?.y);
+    const inspection = housingRowLabel_(page, /Identify the entity/i, type?.y);
+    const description = housingRowLabel_(page, /Additional Housing Information/i, inspection?.y);
 
     if (!address || !city || !type || !inspection) {
-      console.warn(`Incomplete main housing labels on page ${page.pageNumber}`);
+      console.warn('Incomplete main housing labels:', {
+        page: page.pageNumber, heading, address, city, type, inspection, description
+      });
       continue;
     }
 
