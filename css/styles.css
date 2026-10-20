@@ -831,6 +831,11 @@
   outline-offset: 2px;
 }
 
+.jo-download-btn {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
 @media (max-width: 600px) {
   #agenciesTable {
     min-width: 0;
