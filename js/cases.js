@@ -49,6 +49,39 @@ function renderJobOrderTab_() {
   if (exportReady) addJobOrderCsvButton_(container, activeJobOrderTab);
 }
 
+function jobOrderAddressLine_(record) {
+  if (record.address) return String(record.address).replace(/\s+/g, ' ').trim();
+
+  const street = record.address_street || '';
+  const city = record.city || '';
+  const state = record.state || '';
+  const zip = record.zip || '';
+
+  return [street, city, [state, zip].filter(Boolean).join(' ')]
+    .filter(Boolean).join(', ').replace(/\s+/g, ' ').trim();
+}
+
+function makeJobOrderCopyAddressButton_(address) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn jo-copy-address';
+  button.textContent = 'Copy Address';
+  button.disabled = !address;
+
+  button.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(address);
+      button.textContent = 'Copied!';
+      setTimeout(() => { button.textContent = 'Copy Address'; }, 1500);
+    } catch (error) {
+      console.error('Could not copy address:', error);
+      button.textContent = 'Copy failed';
+    }
+  });
+
+  return button;
+}
+
 const JOB_ORDER_CSV_COLUMNS = {
   rates: ['id', 'crop_id', 'crop_or_ag_activity', 'wage_offer', 'per', 'units_rate_info', 'default_sort_order'],
   worksites: ['id', 'address_street', 'city', 'county', 'state', 'zip', 'name_of_business', 'nickname'],
@@ -96,15 +129,21 @@ function downloadJobOrderCsv_(tab = activeJobOrderTab) {
 
 function addJobOrderCsvButton_(container, tab) {
   const rows = activeJobOrderData?.[tab] || [];
-  const button = document.createElement('button');
+  const heading = container.querySelector('h4');
+  if (!heading) return;
 
+  const header = document.createElement('div');
+  header.className = 'jo-section-header';
+
+  const button = document.createElement('button');
   button.type = 'button';
   button.className = 'btn jo-download-btn';
   button.textContent = `↓ Download CSV (${rows.length})`;
   button.disabled = !rows.length;
   button.addEventListener('click', () => downloadJobOrderCsv_(tab));
 
-  container.appendChild(button);
+  heading.replaceWith(header);
+  header.append(heading, button);
 }
 
 function setCaseModalView_(view) {
@@ -200,9 +239,9 @@ async function openExtractedCaseView_() {
       terms: parseAddendumCTerms_(pages),
       exportReady: {
         rates: true,
-        worksites: false,
-        housing: false,
-        terms: false
+        worksites: true,
+        housing: true,
+        terms: true
       }
     };
 
@@ -803,6 +842,16 @@ function renderJobOrderHousing_(housing) {
     title.className = 'joItemHeading';
     title.textContent = `Housing ${index + 1}`;
 
+    const address = jobOrderAddressLine_(record);
+    const addressRow = document.createElement('div');
+    addressRow.className = 'jo-address-row';
+
+    const addressText = document.createElement('span');
+    addressText.className = 'jo-address-text';
+    addressText.textContent = address;
+
+    addressRow.append(addressText, makeJobOrderCopyAddressButton_(address));
+
     const details = document.createElement('div');
     details.className = 'jo-worksite-details';
 
@@ -841,7 +890,7 @@ function renderJobOrderHousing_(housing) {
       details.appendChild(warning);
     }
 
-    card.append(title, details);
+    card.append(title, addressRow, details);
     container.appendChild(card);
   });
 }
@@ -1080,7 +1129,6 @@ function renderAddendumBWorksites_(worksites) {
 
     const fields = [
       ['Business', site.business],
-      ['Location', site.address],
       ['Additional Information', site.additionalInfo],
       ['Begin Date', site.beginDate],
       ['End Date', site.endDate],
@@ -1105,26 +1153,18 @@ function renderAddendumBWorksites_(worksites) {
       details.appendChild(line);
     });
 
-    const copyButton = document.createElement('button');
-    copyButton.type = 'button';
-    copyButton.textContent = 'Copy Worksite';
+    const address = jobOrderAddressLine_(site);
+    const addressRow = document.createElement('div');
+    addressRow.className = 'jo-address-row';
 
-    copyButton.addEventListener('click', async () => {
-      const text = fields
-        .filter(([, value]) => value !== null && value !== undefined && value !== '')
-        .map(([label, value]) => `${label}: ${value}`)
-        .join('\n');
+    const addressText = document.createElement('span');
+    addressText.className = 'jo-address-text';
+    addressText.textContent = address;
 
-      try {
-        await navigator.clipboard.writeText(text);
-        copyButton.textContent = 'Copied!';
-        setTimeout(() => { copyButton.textContent = 'Copy Worksite'; }, 1500);
-      } catch (error) {
-        console.error('Could not copy worksite:', error);
-      }
-    });
-
-    card.append(title, details, copyButton);
+    addressRow.append(addressText, makeJobOrderCopyAddressButton_(address));
+    card.append(title, addressRow, details);
+    container.appendChild(card);
+    
     container.appendChild(card);
   });
 }
