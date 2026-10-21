@@ -1105,26 +1105,6 @@ function renderJobOrderRequirements_(requirements) {
 
   card.appendChild(body);
 
-  if (requirements) {
-    const copyButton = document.createElement('button');
-    copyButton.type = 'button';
-    copyButton.className = 'btn';
-    copyButton.textContent = 'Copy Requirements';
-
-    copyButton.addEventListener('click', async () => {
-      try {
-        await copyTextToClipboard_(requirements);
-        copyButton.textContent = 'Copied!';
-        setTimeout(() => { copyButton.textContent = 'Copy Requirements'; }, 1500);
-      } catch (error) {
-        console.error('Could not copy requirements:', error);
-        copyButton.textContent = 'Copy failed';
-      }
-    });
-
-    card.appendChild(copyButton);
-  }
-
   container.appendChild(card);
 }
 
