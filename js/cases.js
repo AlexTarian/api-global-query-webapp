@@ -340,7 +340,7 @@ function renderJobOrderTextPreview_(caseNum, pages) {
 function parseMainWorksite_(pages) {
   for (const page of pages) {
     const heading = housingRowLabel_(page, /C\.\s*Place of Employment Information/i);
-    if (!heading || /Addendum B/i.test(page.text)) continue;
+    if (!heading || /Form\s+ETA-790A\s+Addendum\s+B/i.test(page.text)) continue;
 
     const addressLabel = housingRowLabel_(page, /Place of Employment Address\/Location/i, heading.y);
     const locationLabel = housingRowLabel_(page, /2\s*\.\s*City/i, addressLabel?.y);
