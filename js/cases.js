@@ -276,7 +276,10 @@ async function openExtractedCaseView_() {
       caseNum,
       pages,
       rates: parseAddendumARates_(pages),
-      worksites: parseAddendumBWorksites_(pages),
+      worksites: mergeJobOrderWorksites_(
+        parseMainWorksite_(pages),
+        parseAddendumBWorksites_(pages)
+      ),
       housing: parseJobOrderHousing_(pages),
       terms: parseAddendumCTerms_(pages),
       exportReady: {
@@ -332,6 +335,117 @@ function renderJobOrderTextPreview_(caseNum, pages) {
     section.append(heading, preview);
     container.appendChild(section);
   });
+}
+
+function parseMainWorksite_(pages) {
+  for (const page of pages) {
+    const heading = housingRowLabel_(page, /C\.\s*Place of Employment Information/i);
+    if (!heading || /Addendum B/i.test(page.text)) continue;
+
+    const addressLabel = housingRowLabel_(page, /Place of Employment Address\/Location/i, heading.y);
+    const locationLabel = housingRowLabel_(page, /2\s*\.\s*City/i, addressLabel?.y);
+    const additionalLabel = housingRowLabel_(page, /6\.\s*Additional Place of Employment Information/i, locationLabel?.y);
+    const addendumLabel = housingRowLabel_(page, /7\.\s*Is a completed/i, additionalLabel?.y);
+
+    if (!addressLabel || !locationLabel || !additionalLabel) continue;
+
+    const street = housingValue_(page, addressLabel.y - 2, locationLabel.y + 2, 35, 600);
+    const locationItems = housingItems_(page, locationLabel.y - 2, additionalLabel.y + 3);
+
+    const column = (minX, maxX) => housingClean_(
+      locationItems.filter(item => item.x >= minX && item.x < maxX)
+        .map(item => item.text).join(' ')
+    );
+
+    const city = column(35, 260);
+    const state = column(260, 315);
+    const zip = column(315, 395);
+    const county = column(395, 600).replace(/\s+COUNTY$/i, ' County');
+
+    const additionalInfo = addendumLabel
+      ? housingValue_(page, additionalLabel.y - 2, addendumLabel.y + 3, 35, 600)
+      : '';
+
+    if (!street || !city) continue;
+
+    const address = [street, city, [state, zip].filter(Boolean).join(' '), county]
+      .filter(Boolean).join(', ');
+
+    return {
+      business: '',
+      address,
+      address_street: street,
+      city,
+      state,
+      zip,
+      county,
+      primary: true,
+      additionalInfo: /^none$/i.test(additionalInfo) ? '' : additionalInfo,
+      beginDate: '',
+      endDate: '',
+      workers: null
+    };
+  }
+
+  console.warn('Primary worksite could not be identified in the main ETA-790A.');
+  return null;
+}
+
+function normalizeWorksiteAddressKey_(site) {
+  const address = site.address_street
+    ? [site.address_street, site.city, site.state, site.zip].join(' ')
+    : String(site.address || '').replace(/,\s*[^,]*COUNTY\s*$/i, '');
+
+  const stateNames = {
+    'NORTH DAKOTA': 'ND',
+    'SOUTH DAKOTA': 'SD'
+  };
+
+  let normalized = address.toUpperCase();
+
+  for (const [name, abbreviation] of Object.entries(stateNames)) {
+    normalized = normalized.replace(new RegExp(`\\b${name}\\b`, 'g'), abbreviation);
+  }
+
+  return normalized.replace(/[^A-Z0-9]/g, '');
+}
+
+function mergeJobOrderWorksites_(primary, additional = []) {
+  const results = [];
+  const indexByAddress = new Map();
+
+  function add(site) {
+    const key = normalizeWorksiteAddressKey_(site);
+
+    if (!key) {
+      results.push(site);
+      return;
+    }
+
+    const existingIndex = indexByAddress.get(key);
+
+    if (existingIndex !== undefined) {
+      const existing = results[existingIndex];
+
+      results[existingIndex] = {
+        ...existing,
+        ...Object.fromEntries(
+          Object.entries(site).filter(([key, value]) =>
+            key !== 'primary' && value !== '' && value !== null && value !== undefined
+          )
+        ),
+        primary: existing.primary === true || site.primary === true
+      };
+    } else {
+      indexByAddress.set(key, results.length);
+      results.push({ ...site });
+    }
+  }
+
+  if (primary) add(primary);
+  additional.forEach(add);
+
+  return results.sort((a, b) => Number(b.primary === true) - Number(a.primary === true));
 }
 
 function parseAddendumBWorksites_(pages) {
@@ -1162,12 +1276,12 @@ function renderAddendumBWorksites_(worksites) {
   container.replaceChildren();
 
   const heading = document.createElement('h4');
-  heading.textContent = `Additional Worksites (${worksites.length})`;
+  heading.textContent = `Worksites (${worksites.length})`;
   container.appendChild(heading);
 
   if (!worksites.length) {
     const message = document.createElement('p');
-    message.textContent = 'No Addendum B worksites were found.';
+    message.textContent = 'No worksites were identified in the job order.';
     container.appendChild(message);
     return;
   }
@@ -1178,7 +1292,9 @@ function renderAddendumBWorksites_(worksites) {
 
     const title = document.createElement('div');
     title.className = 'joItemHeading';
-    title.textContent = `Worksite ${index + 1}`;
+    title.textContent = site.primary
+      ? `Worksite ${index + 1} — Primary`
+      : `Worksite ${index + 1}`;
 
     const details = document.createElement('div');
 
