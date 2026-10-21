@@ -42,6 +42,10 @@ function renderJobOrderTab_() {
     case 'terms':
       renderAddendumCTerms_(activeJobOrderData.terms);
       break;
+
+    case 'requirements':
+      renderJobOrderRequirements_(activeJobOrderData.requirements);
+      break;  
   }
 
   // Only enable CSV downloads once a tab has export-ready records.
@@ -282,6 +286,7 @@ async function openExtractedCaseView_() {
       ),
       housing: parseJobOrderHousing_(pages),
       terms: parseAddendumCTerms_(pages),
+      requirements: parseJobOrderRequirements_(pages),
       exportReady: {
         rates: true,
         worksites: true,
@@ -1043,6 +1048,82 @@ function renderJobOrderHousing_(housing) {
     card.append(title, addressRow, details);
     container.appendChild(card);
   });
+}
+
+function parseJobOrderRequirements_(pages) {
+  const results = [];
+
+  for (const page of pages) {
+    if (/(?:Form\s+)?ETA-790A\s+Addendum\s+[ABC]/i.test(page.text)) continue;
+
+    const rows = getPdfTextRows_(page, 3);
+    const startIndex = rows.findIndex(row =>
+      /6\.\s*Additional Information Regarding Job Qualifications\/Requirements/i.test(row.text)
+    );
+
+    if (startIndex === -1) continue;
+
+    const start = rows[startIndex];
+    const nextSection = rows.slice(startIndex + 1).find(row =>
+      /^\s*(?:7\.\s|C\.\s|D\.\s|E\.\s)/i.test(row.text)
+    );
+
+    const bottomY = nextSection?.y ?? 70;
+
+    const text = rows
+      .filter(row => row.y < start.y && row.y > bottomY)
+      .map(row => row.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (text && !/^none$/i.test(text)) {
+      results.push(text);
+    }
+  }
+
+  return results.join('\n\n');
+}
+
+function renderJobOrderRequirements_(requirements) {
+  const container = document.getElementById('modalExtractedContent');
+  container.replaceChildren();
+
+  const heading = document.createElement('h4');
+  heading.textContent = 'Additional Job Requirements (B.6)';
+  container.appendChild(heading);
+
+  const card = document.createElement('div');
+  card.className = 'modal-info-card';
+
+  const body = document.createElement('p');
+  body.className = 'jo-term-details';
+  body.style.whiteSpace = 'pre-wrap';
+  body.textContent = requirements || 'No additional job requirements were identified.';
+
+  card.appendChild(body);
+
+  if (requirements) {
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'btn';
+    copyButton.textContent = 'Copy Requirements';
+
+    copyButton.addEventListener('click', async () => {
+      try {
+        await copyTextToClipboard_(requirements);
+        copyButton.textContent = 'Copied!';
+        setTimeout(() => { copyButton.textContent = 'Copy Requirements'; }, 1500);
+      } catch (error) {
+        console.error('Could not copy requirements:', error);
+        copyButton.textContent = 'Copy failed';
+      }
+    });
+
+    card.appendChild(copyButton);
+  }
+
+  container.appendChild(card);
 }
 
 function getAddendumCPages_(pages) {
