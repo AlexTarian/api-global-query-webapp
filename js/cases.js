@@ -347,7 +347,7 @@ function parseMainWorksite_(pages) {
     const heading = housingRowLabel_(page, /C\.\s*Place of Employment Information/i);
     if (!heading || /Form\s+ETA-790A\s+Addendum\s+B/i.test(page.text)) continue;
 
-    const addressLabel = housingRowLabel_(page, /Place of Employment Address\/Location/i, heading.y);
+    const addressLabel = housingRowLabel_(page, /1\s*\.\s*P\s*lace of\s*E\s*mployment\s*A\s*ddress\/Location/i, heading.y);
     const locationLabel = housingRowLabel_(page, /2\s*\.\s*City/i, addressLabel?.y);
     const additionalLabel = housingRowLabel_(page, /6\.\s*Additional Place of Employment Information/i, locationLabel?.y);
     const addendumLabel = housingRowLabel_(page, /7\.\s*Is a completed/i, additionalLabel?.y);
@@ -1074,6 +1074,8 @@ function parseJobOrderRequirements_(pages) {
       .filter(row => row.y < start.y && row.y > bottomY)
       .map(row => row.text)
       .join(' ')
+      .replace(/\s+/g, ' ')
+      .replace(/\(\s*Please begin response on this form[\s\S]*?below\s*\)/i, '')
       .replace(/\s+/g, ' ')
       .trim();
 
